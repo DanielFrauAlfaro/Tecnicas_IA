@@ -2,6 +2,8 @@ from tools import *
 from defines import *
 import math
 import time
+import itertools
+
 
 class SearchEngine():
     def __init__(self):
@@ -33,6 +35,7 @@ class SearchEngine():
 
         print("\n\n ME DICE EL COLOR ", str(ourColor))
 
+        
         self.ourColor = ourColor
 
         #Check game result
@@ -90,112 +93,99 @@ class SearchEngine():
         seen = set(possibles)
 
         # N vecinos cercanos
-        n = 1
-
+        n = 2
+        
         # Doble para recorrer todas las posiciones del tablero 
         # IMPORTANTE: esto empieza por el start_possible para que de expandir el arbol, no busque desde el (1,1)
-        for i in range(1, Defines.GRID_NUM - 1):
-            for j in range(1, Defines.GRID_NUM - 1):
-                
-                # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
-                x = Defines.GRID_NUM - 1 - j
-                y = i
-                stone = self.m_board[x][y]
+        for i in self.pre_move.positions:
+            
+            # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
+            x = i.x
+            y = i.y
+            stone = self.m_board[x][y]
 
-                # Si encuentra un hueco donde hay una ficha ...   
-                if stone is not Defines.NOSTONE:
+            # Si encuentra un hueco donde hay una ficha ...   
+            if stone is not Defines.NOSTONE:
 
-                    # Variable que indica que parte del cuadrado se incrementa: vertical o horizontal
-                    # Variable que indice la dirección en la que se buscan los vecinos
-                    indices = 1
+                # Variable que indica que parte del cuadrado se incrementa: vertical o horizontal
+                # Variable que indice la dirección en la que se buscan los vecinos
+                indices = 1
 
-                    # Recorre los n cuadrados de vecinos
-                    for k in range(0,n):
+                # Recorre los n cuadrados de vecinos
+                for k in range(0,n):
 
-                        # Inicio de la ventana (coordenadas de esquina inferior izquierda - iteración)
-                        #   De fuera hacia dentro
-                        start_xy = [x+n-k, y+n-k]
+                    # Inicio de la ventana (coordenadas de esquina inferior izquierda - iteración)
+                    #   De fuera hacia dentro
+                    start_xy = [x+n-k, y+n-k]
 
-                        # Incremento del recorrido
-                        inc = -1
-
-
-                        # Para los cuatro lados del cuadrado
-                        for h in range(0,4):
-                            
-                            # Para cada casilla de un lado (cada lado tiene 2 veces la distancia al vecino actual (n-k))
-                            for f in range(0, 2*(n-k)):
+                    # Incremento del recorrido
+                    inc = -1
 
 
-                                # TODO: ver que condición poner primero de las dos siguientes
-                                # Si la casilla explorada está dentro del tablero
-                                if (start_xy[0] < 20 and start_xy[0] > 0) and (start_xy[1] < 20 and start_xy[1] > 0):
-                                    
-                                    if self.start_found is not True:
-                                            self.start_found = True
-                                            self.start_possible_x = i
-                                            self.start_possible_y = j
-
-                                    # Si la casilla a explorar es un hueco y no está en la lista de posibles (con la tabla Hash)
-                                    if self.m_board[start_xy[0]][start_xy[1]] == Defines.NOSTONE and tuple([start_xy[0], start_xy[1]]) not in seen:
-
-                                        # Se añade a la lista de posibles y la tabla Hash
-                                        possibles.append([start_xy[0], start_xy[1]])
-                                        seen.add(tuple([start_xy[0], start_xy[1]]))
-
-                                        self.end_possible_x = max(self.end_possible_x, i)
-                                        self.end_possible_y = max(self.end_possible_y, j)
+                    # Para los cuatro lados del cuadrado
+                    for h in range(0,4):
+                        
+                        # Para cada casilla de un lado (cada lado tiene 2 veces la distancia al vecino actual (n-k))
+                        for f in range(0, 2*(n-k)):
 
 
-
-                                # Intento de condición de cortar: alomejor faltan al explorar
-                                # elif inc < 0:
-                                #     start_xy[indices] += inc*(2*(n-k) - f+1)
-                                #     break
+                            # TODO: ver que condición poner primero de las dos siguientes
+                            # Si la casilla explorada está dentro del tablero
+                            if (start_xy[0] < 20 and start_xy[0] > 0) and (start_xy[1] < 20 and start_xy[1] > 0):
                                 
-                                # Incremento de la posición según la dirección (indices)
-                                start_xy[indices] += inc
+                                if self.start_found is not True:
+                                        self.start_found = True
+                                        # self.start_possible_x = i
+                                        # self.start_possible_y = j
+
+                                # Si la casilla a explorar es un hueco y no está en la lista de posibles (con la tabla Hash)
+                                if self.m_board[start_xy[0]][start_xy[1]] == Defines.NOSTONE and tuple([start_xy[0], start_xy[1]]) not in seen:
+
+                                    # Se añade a la lista de posibles y la tabla Hash
+                                    possibles.insert(0, [start_xy[0], start_xy[1]])
+                                    seen.add(tuple([start_xy[0], start_xy[1]]))
+
+                                    # self.end_possible_x = max(self.end_possible_x, i)
+                                    # self.end_possible_y = max(self.end_possible_y, j)
+
+
+
+                            # Intento de condición de cortar: alomejor faltan al explorar
+                            # elif inc < 0:
+                            #     start_xy[indices] += inc*(2*(n-k) - f+1)
+                            #     break
                             
-                            # Cambia el incremento para hacer: hacia arriba (izq) - derecha (arriba) - abajo (dcha) - izquierda (abajo) 
-                            if h == 1:
-                                inc = 1
-                            
-                            # Cambia el índice para moverse: Y - X - (-Y) - (-X) --> el '-' es para la dirección que marca "indices"
-                            if indices == 1:
-                                indices = 0
-                            else:
-                                indices = 1
+                            # Incremento de la posición según la dirección (indices)
+                            start_xy[indices] += inc
+                        
+                        # Cambia el incremento para hacer: hacia arriba (izq) - derecha (arriba) - abajo (dcha) - izquierda (abajo) 
+                        if h == 1:
+                            inc = 1
+                        
+                        # Cambia el índice para moverse: Y - X - (-Y) - (-X) --> el '-' es para la dirección que marca "indices"
+                        if indices == 1:
+                            indices = 0
+                        else:
+                            indices = 1
 
-        score = self.alpha_beta(possibles, depth)
 
-        return score
-
-    def alpha_beta(self, possibles, depth, turn = 0):
-        score = [0, [[-1, -1], [-1, -1]]]
-        alpha_beta = [-math.inf, math.inf]
+        score = self.max(possibles, depth, -math.inf, math.inf)
         
-        # ----- Caso base 1.0 ------
-        # if depth == 0:
-        #     # Recorriendo desde el inicio de los posibles
-        #     for i in range(self.start_possible_x, Defines.GRID_NUM - 1):
-        #         for j in range(self.start_possible_y, Defines.GRID_NUM - 1):
-                    
-        #             # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
-        #             x = Defines.GRID_NUM - 1 - j
-        #             y = i
-        #             stone = self.m_board[x][y]
-                    
-        #             # Si no hay una pieza, busca el numero de fichas en la fila
-        #             if stone is not Defines.NOSTONE:
-        #                 score[0] += self.find_file(x,y)
+        return score
+    
+    def max(self, possibles, depth, alpha, beta, turn = 1):
+        score = [0, [[-1, -1], [-1, -1]]]
 
         if depth == 0:
             if self.turn >=6:
-                score[0] = self.threats()
+                if self.ourColor is Defines.BLACK:
+                    score[0] = self.threats(Defines.BLACK)
+                else:
+                    score[0] = self.threats(Defines.WHITE)
 
             else:
-                for i in range(self.start_possible_x, Defines.GRID_NUM - 1):
-                    for j in range(self.start_possible_y, Defines.GRID_NUM - 1):
+                for i in range(1, Defines.GRID_NUM - 1):
+                    for j in range(1, Defines.GRID_NUM - 1):
                         
                         # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
                         x = Defines.GRID_NUM - 1 - j
@@ -206,41 +196,57 @@ class SearchEngine():
                         if stone is not Defines.NOSTONE:
                             score[0] += self.find_file(x,y)
 
-            return score
+                return score
 
-        # ----- Recursión ------
         else:
-            
-            color = self.ourColor
-            
-            # 0 = Turno de Max
-            # 1 = Turno de Min
-
-            # Si es el turno de Max, guarda para que el siguiente sea el turno de Min
-            if turn == 0:
-                color = self.ourColor   # Color de la llamada
-                turn = 1                # Turno de Min (para la llamada recursiva)
-                score[0] = -math.inf    # V = -inf
-
-            # Si es el turno de Min, guarda para que el siguiente sea el turno de Max
-            else:
-                turn = 0                                # Turno de Max para la siguiente iteración
-                score[0] = math.inf                     # V = inf
-                if self.ourColor is Defines.BLACK:      # Cambia el valor de la ficha
-                    color = Defines.WHITE
-                else:
-                    color = Defines.BLACK
-            
+            score[0] = -math.inf
             move = StoneMove()
+            color = self.ourColor
+
+            if turn == -1:
+                if self.ourColor == Defines.WHITE:
+                    color = Defines.BLACK
+                else:
+                    color = Defines.WHITE
+
+            # idx_i = 0
+
+            # v = []
+
+            # idx_v = 0
+
+            # for m in possibles:
+            #     possibles.remove(m)
+            #     idx = 0
+
+            #     for n in possibles:
+            #         move.positions[0].x = m[0]
+            #         move.positions[0].y = m[1]
+            #         move.positions[1].x = n[0]  
+            #         move.positions[1].y = n[1]
+
+            #         make_move(self.m_board, move, color)
+
+                    
+            #         move.score = self.threats(color)
+            #         v.append(move)
+
+            #         make_move(self.m_board, move, Defines.NOSTONE)
+            #         idx += 1
+
+            #     possibles.insert(idx_v, m)
+            #     idx_v += 1
+
+
+            
             
             # Por cada valor posible, establece todas las combinaciones posibles
             for i in possibles:
                 
                 # Remueve el primero de la lista para que no repita valores en las siguientes
                 possibles.remove(i)
-
+                
                 for j in possibles:
-
                     # Establece los movimientos
                     move.positions[0].x = i[0]
                     move.positions[0].y = i[1]
@@ -255,40 +261,207 @@ class SearchEngine():
                     possibles_aux.remove(j)
 
                     # ------ EXPAND -----
-                    score_aux = self.alpha_beta(possibles_aux, depth-1, turn)
+                    score_aux = self.max(possibles_aux, depth-1, -beta, -alpha, turn*-1)
+                    score_aux[0] = -score_aux[0]
                     score_aux[1]= [i, j]
+
+                    if score_aux[0] > score[0]:
+                        score = score_aux
+
+                    if score[0] >= beta:
+                        # print("poda max", score[0])
+                        return score
                     
-                    # ------- Poda alfa - beta -------
-                    # Max: estamos en el caso de que estamos moviendo. Antes del bucle se cambia
-                    #   la variable
-                    if turn == 1:
+                    if score[0] > alpha:
+                        alpha = score[0]
 
-                        if score_aux[0] > score[0]:
-                            score = score_aux
-                        
-                        if score[0] >= alpha_beta[1]:
-                            return score
-
-                        alpha_beta[0] = max(alpha_beta[0], score[0])
-                    
-                    # Min: estamos en el caso que mueve el oponente. Antes del bucle se cambia la variable
-                    if turn == 0:
-
-                        if score_aux[0] < score[0]:
-                            score = score_aux
-                        
-                        if score[0] <= alpha_beta[0]:
-                            return score
-
-                        alpha_beta[1] = max(alpha_beta[1], score[0])
-                    
-                    # Se vuelve a insertar el elemento para las siguientes iteraciones
-                    possibles_aux.append(j)
-
-                    # Deshace el movimiento
                     make_move(self.m_board, move, Defines.NOSTONE)
-
+                
+                possibles.insert(idx_i, i)
+                idx_i += 1
         return score
+                    
+    # def min(self, possibles, depth, alpha, beta):
+    #     score = [0, [[-1, -1], [-1, -1]]]
+
+    #     if depth == 0:
+    #         if self.turn >=0:
+    #             if self.ourColor is Defines.BLACK:
+    #                 score[0] = self.threats(Defines.WHITE)
+    #             else:
+    #                 score[0] = self.threats(Defines.BLACK)
+
+    #         else:
+    #             for i in range(1, Defines.GRID_NUM - 1):
+    #                 for j in range(1, Defines.GRID_NUM - 1):
+                        
+    #                     # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
+    #                     x = Defines.GRID_NUM - 1 - j
+    #                     y = i
+    #                     stone = self.m_board[x][y]
+                        
+    #                     # Si no hay una pieza, busca el numero de fichas en la fila
+    #                     if stone is not Defines.NOSTONE:
+    #                         score[0] += self.find_file(x,y)
+                
+    #             return score
+
+    #     else:
+    #         score[0] = math.inf
+    #         move = StoneMove()
+
+    #         color = self.ourColor
+
+    #         if self.ourColor == Defines.BLACK:
+    #             color = Defines.WHITE
+    #         else:
+    #             color = Defines.BLACK
+            
+    #         # Por cada valor posible, establece todas las combinaciones posibles
+    #         for i in possibles:
+                
+    #             # Remueve el primero de la lista para que no repita valores en las siguientes
+    #             possibles.remove(i)
+
+    #             for j in possibles:
+    #                 # Establece los movimientos
+    #                 move.positions[0].x = i[0]
+    #                 move.positions[0].y = i[1]
+    #                 move.positions[1].x = j[0]  
+    #                 move.positions[1].y = j[1]
+
+    #                 # Hace el movimiento
+    #                 make_move(self.m_board, move, color)
+
+    #                 # Quita el valor de posibles de la lista, ya está ocupado
+    #                 possibles_aux = possibles.copy()
+    #                 possibles_aux.remove(j)
+
+    #                 # ------ EXPAND -----
+    #                 score_aux = self.max(possibles_aux, depth-1, alpha, beta)
+    #                 score_aux[1]= [i, j]
+
+    #                 if score_aux[0] < score[0]:
+    #                     score = score_aux
+
+    #                 if score[0] <= alpha:
+    #                     # print("poda Min", score[0])
+    #                     return score
+                    
+    #                 if score[0] < beta:
+    #                     beta = score[0]
+
+    #                 make_move(self.m_board, move, Defines.NOSTONE)
+
+    #     return score
+    
+
+
+    # def alpha_beta(self, possibles, depth, turn = 0):
+    #     score = [0, [[-1, -1], [-1, -1]]]
+    #     alpha_beta = [-math.inf, math.inf]
+        
+
+    #     if depth == 0:
+    #         if self.turn >=6:
+    #             score[0] = self.threats()
+
+    #         else:
+    #             for i in range(self.start_possible_x, Defines.GRID_NUM - 1):
+    #                 for j in range(self.start_possible_y, Defines.GRID_NUM - 1):
+                        
+    #                     # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
+    #                     x = Defines.GRID_NUM - 1 - j
+    #                     y = i
+    #                     stone = self.m_board[x][y]
+                        
+    #                     # Si no hay una pieza, busca el numero de fichas en la fila
+    #                     if stone is not Defines.NOSTONE:
+    #                         score[0] += self.find_file(x,y)
+
+    #         return score
+
+    #     # ----- Recursión ------
+    #     else:
+            
+    #         color = self.ourColor
+            
+    #         # 0 = Turno de Max
+    #         # 1 = Turno de Min
+
+    #         # Si es el turno de Max, guarda para que el siguiente sea el turno de Min
+    #         if turn == 0:
+    #             color = self.ourColor   # Color de la llamada
+    #             turn = 1                # Turno de Min (para la llamada recursiva)
+    #             score[0] = -math.inf    # V = -inf
+
+    #         # Si es el turno de Min, guarda para que el siguiente sea el turno de Max
+    #         else:
+    #             turn = 0                                # Turno de Max para la siguiente iteración
+    #             score[0] = math.inf                     # V = inf
+    #             if self.ourColor is Defines.BLACK:      # Cambia el valor de la ficha
+    #                 color = Defines.WHITE
+    #             else:
+    #                 color = Defines.BLACK
+            
+    #         move = StoneMove()
+            
+    #         # Por cada valor posible, establece todas las combinaciones posibles
+    #         for i in possibles:
+                
+    #             # Remueve el primero de la lista para que no repita valores en las siguientes
+    #             possibles.remove(i)
+
+    #             for j in possibles:
+
+    #                 # Establece los movimientos
+    #                 move.positions[0].x = i[0]
+    #                 move.positions[0].y = i[1]
+    #                 move.positions[1].x = j[0]  
+    #                 move.positions[1].y = j[1]
+
+    #                 # Hace el movimiento
+    #                 make_move(self.m_board, move, color)
+
+    #                 # Quita el valor de posibles de la lista, ya está ocupado
+    #                 possibles_aux = possibles.copy()
+    #                 possibles_aux.remove(j)
+
+    #                 # ------ EXPAND -----
+    #                 score_aux = self.alpha_beta(possibles_aux, depth-1, turn)
+    #                 score_aux[1]= [i, j]
+                    
+    #                 # ------- Poda alfa - beta -------
+    #                 # Max: estamos en el caso de que estamos moviendo. Antes del bucle se cambia
+    #                 #   la variable
+    #                 if turn == 1:
+
+    #                     if score_aux[0] > score[0]:
+    #                         score = score_aux
+                        
+    #                     if score[0] >= alpha_beta[1]:
+    #                         return score
+
+    #                     alpha_beta[0] = max(alpha_beta[0], score[0])
+                    
+    #                 # Min: estamos en el caso que mueve el oponente. Antes del bucle se cambia la variable
+    #                 if turn == 0:
+
+    #                     if score_aux[0] < score[0]:
+    #                         score = score_aux
+                        
+    #                     if score[0] <= alpha_beta[0]:
+    #                         return score
+
+    #                     alpha_beta[1] = max(alpha_beta[1], score[0])
+                    
+    #                 # Se vuelve a insertar el elemento para las siguientes iteraciones
+    #                 possibles_aux.append(j)
+
+    #                 # Deshace el movimiento
+    #                 make_move(self.m_board, move, Defines.NOSTONE)
+
+    #     return score
 
 
     # ------ Heuristica 1.0: busca filas --------
@@ -335,24 +508,19 @@ class SearchEngine():
                 
                 count = 1 + x_row + y_row + diag_row
 
+
+        # if count > 0:
+        #     print_board(self.m_board)
+        #     time.sleep(10)
         return count
 
 
-
-
-
-
-
-
-
-
-    # TODO: HACER EL CALCULO DE LOS NUEVOS VECINOS --> CAMBIO DE LA FUNCION find_possibles
-    # TODO: ARREGLAR EL CALCULO DE LAS COLUMNAS EN EL THREATS
-    # TODO: VER CUANDO ME ESTÁN ATACANDO Y CAMBIAR ESTRATEGIA --> DARLE MAS VALOR A LAS ESTRATEGIAS QUE BLOQUEEN AL RIVAL
-    # TODO: ORDENAR LOS NODOS INTERMEDIOS DEL ARBOL --> APLICAR FUNCIÓN DE EVALUACIÓN A LOS NODOS INTERMEDIOS Y ORDENAR 
-    #   SEGÚN EL SIGUIENTE TURNO
-    def threats(self):
-        num_threats = [[], [], []]
+    def threats(self, color):
+        ourColor = color
+        num_threats = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
         
 
         h_threats = []
@@ -364,17 +532,11 @@ class SearchEngine():
         d_threats = []
         seen_d_threats = set(d_threats)
 
-        for i in range(self.start_possible_x, self.end_possible_x):
-            # h_threats = []
-            # seen_h_threats = set(h_threats)
-            
-            # v_threats = []
-            # seen_v_threats = set(v_threats)
+        d2_threats = []
+        seen_d2_threats = set(d2_threats)
 
-            # d_threats = []
-            # seen_d_threats = set(d_threats)
-
-            for j in range(self.start_possible_y, self.end_possible_y):
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
                 
                 count_h = 0
                 count_e_h = 0
@@ -385,62 +547,119 @@ class SearchEngine():
                 count_d = 0
                 count_e_d = 0
 
-                x = Defines.GRID_NUM - 1 - j
+                count_d = 0
+                count_e_d = 0
+
+                count_d2 = 0
+                count_e_d2 = 0
+
+                x = j
                 y = i
+
+                right_e_h = 0
+                right_e_v = 0
+                right_e_d = [0,0]
+                right_e_d2 = [0,0]
                 
                 
                 for k in range(0,6):
-                    
+                
+                    # Vertical
+                    if x + 6 < 20 and tuple([x + k,y]) not in seen_v_threats:
+                        stone = self.m_board[x + k][y]
 
-                    # Horizontal
-                    if x - 6 > 0 and tuple([x,y]) not in seen_h_threats:
-                        stone = self.m_board[x-k][y]
-
-                        if stone is self.ourColor:
-                            count_h +=  1
-                        elif stone is Defines.NOSTONE:
-                            count_e_h +=1
-
-                    # Vertical: está cambiado para que haga [y,x]
-                    if x + 6 < 20 and tuple([y,x]) not in seen_v_threats:
-                        stone = self.m_board[y][x+k]
-
-                        if stone is self.ourColor:
+                        if stone is ourColor:
                             count_v +=  1
                         elif stone is Defines.NOSTONE:
-                            count_e_v +=1
+                            count_e_v += 1
 
-                    # Diag
-                    if y + 6 < 20 and x - 6 > 0  and tuple([x,y]) not in seen_d_threats:
-                        stone = self.m_board[x-k][y+k]
+                            right_e_v = x+k
 
-                        if stone is self.ourColor:
+                    # Horizontal: está cambiado para que haga [y,x]
+                    if x + 6 < 20 and tuple([y,x + k]) not in seen_h_threats:
+                        stone = self.m_board[y][x+k]
+
+                        if stone is ourColor:
+                            count_h +=  1
+                        elif stone is Defines.NOSTONE:
+                            count_e_h += 1
+
+                            right_e_h = x + k
+
+                #     # # Diag
+                    if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]) not in seen_d_threats:
+                        stone = self.m_board[x + k][y + k]
+
+                        if stone is ourColor:
                             count_d +=  1
                         elif stone is Defines.NOSTONE:
-                            count_e_d +=1
+                            count_e_d += 1
 
+                            right_e_d = [x + k,y + k]
+
+                #     # # Diag 2
+                    if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]) not in seen_d2_threats:
+                        stone = self.m_board[x + k][y - k]
+
+                        if stone is ourColor:
+                            count_d2 +=  1
+                            
+                        elif stone is Defines.NOSTONE:
+                            count_e_d2 += 1
+
+                            right_e_d2 = [x + k,y - k]
+                
+
+                if count_v == 4 and count_e_v == 2: 
+                    #h_threats.append([x,right_e_h])
+                    seen_v_threats.add(tuple([right_e_v, y]))
+
+                    num_threats[0][y-1] += 1
+    
                 if count_h == 4 and count_e_h == 2:
-                    h_threats.append([x,y])
-                    seen_h_threats.add(tuple([x,y]))
-                    print("horizontal")
+                    #v_threats.append([right_e_v, x])
+                    seen_h_threats.add(tuple([y, right_e_h]))
 
-                if count_v == 4 and count_e_v == 2:
-                    v_threats.append([y,x])
-                    seen_v_threats.add(tuple([y,x]))
-                    print("vert")
-
+                    num_threats[1][y-1] += 1
+                    
                 if count_d == 4 and count_e_d == 2:
-                    d_threats.append([x,y])
-                    seen_d_threats.add(tuple([x,y]))
-                    print("diag")
-            
-            # num_threats[0].append(len(h_threats))
-            # num_threats[1].insert(len(v_threats), 0)
-            # num_threats[2].append(len(d_threats))
+                    #d_threats.append([right_e_d[0], right_e_d[1]])
+                    seen_d_threats.add(tuple([right_e_d[0], right_e_d[1]]))
+                    
+                    num_threats[2][x - y -1] += 1
+                    
+                    
+                if count_d2 == 4 and count_e_d2 == 2:
+                    #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+                    seen_d2_threats.add(tuple([right_e_d2[0], right_e_d2[1]]))
 
+                    num_threats[3][x + y -1] += 1
         
+        score = 0
+        
+        
+        for (i, j, k, l) in itertools.zip_longest(num_threats[0], num_threats[1], num_threats[2], num_threats[3]):
+            if i==3 or j == 3 or k == 3 or l == 3:
+                score = math.inf
+                break
+            
+            if i is not None and i != 0:
+                score += i**i
+            
+            if j is not None and j != 0:
+                score += j**j
 
-        return len(h_threats) + len(v_threats) + len(d_threats)
+            if k is not None and k != 0:
+                score += k**k
+
+            if l is not None and l != 0:
+                score += l**l
+        
+        # if score > 0:
+        #     print(score)
+            
+
+        return score
             
 
 def flush_output():

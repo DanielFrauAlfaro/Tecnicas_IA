@@ -17,6 +17,8 @@ class GameEngine:
         self.m_search_engine = SearchEngine()
         self.m_best_move = StoneMove()
 
+        self.prev_move = StoneMove()
+
     def init_game(self):
         init_board(self.m_board)
 
@@ -82,6 +84,9 @@ class GameEngine:
                     self.m_chess_type = Defines.WHITE
             elif msg.startswith("move"):
                 self.m_best_move = msg2move(msg[5:])
+                
+                self.prev_move = self.m_best_move
+
                 make_move(self.m_board, self.m_best_move, self.m_chess_type ^ 3)
                 if is_win_by_premove(self.m_board, self.m_best_move):
                     print("We lost!")
@@ -105,7 +110,7 @@ class GameEngine:
         end = 0
 
         start = time.perf_counter()
-        self.m_search_engine.before_search(self.m_board, self.m_chess_type, self.m_alphabeta_depth)
+        self.m_search_engine.before_search(self.m_board, self.m_chess_type, self.m_alphabeta_depth, self.prev_move)
         score = self.m_search_engine.alpha_beta_search(self.m_alphabeta_depth, Defines.MININT, Defines.MAXINT, ourColor, bestMove, bestMove)
         end = time.perf_counter()
 
