@@ -21,15 +21,17 @@ class SearchEngine():
         self.start_found = False
 
         self.turn = 0
-        self.pre_move = StoneMove()
+        self.pre_move = [StoneMove(), StoneMove()]
 
     def before_search(self, board, color, alphabeta_depth, pre_move):
         self.m_board = [row[:] for row in board]
         self.m_chess_type = color
         self.m_alphabeta_depth = alphabeta_depth
         self.m_total_nodes = 0
-
-        self.pre_move = pre_move
+        
+        if self.turn == 0:
+            self.pre_move[1] = pre_move
+        self.pre_move[0] = pre_move
 
     def alpha_beta_search(self, depth, alpha, beta, ourColor, bestMove, preMove):
 
@@ -73,6 +75,9 @@ class SearchEngine():
             bestMove.positions[0].y = move[1][0][1]
             bestMove.positions[1].x = move[1][1][0]
             bestMove.positions[1].y = move[1][1][1]
+
+            self.pre_move[1] = bestMove
+
             make_move(self.m_board,bestMove,ourColor)
 
         return alpha
@@ -95,81 +100,186 @@ class SearchEngine():
         # N vecinos cercanos
         n = 2
         
-        # Doble para recorrer todas las posiciones del tablero 
-        # IMPORTANTE: esto empieza por el start_possible para que de expandir el arbol, no busque desde el (1,1)
-        for i in self.pre_move.positions:
-            
-            # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
-            x = i.x
-            y = i.y
-            stone = self.m_board[x][y]
+        # Doble bucle para recorrer todos los movimientos previos del tablero 
+        for o in self.pre_move:
+            for i in o.positions:
 
-            # Si encuentra un hueco donde hay una ficha ...   
-            if stone is not Defines.NOSTONE:
+                # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
+                x = i.x
+                y = i.y
+                stone = self.m_board[x][y]
 
-                # Variable que indica que parte del cuadrado se incrementa: vertical o horizontal
-                # Variable que indice la dirección en la que se buscan los vecinos
-                indices = 1
+                # Si encuentra un hueco donde hay una ficha ...   
+                if stone is not Defines.NOSTONE:
 
-                # Recorre los n cuadrados de vecinos
-                for k in range(0,n):
+                    # Variable que indica que parte del cuadrado se incrementa: vertical o horizontal
+                    # Variable que indice la dirección en la que se buscan los vecinos
+                    indices = 1
 
-                    # Inicio de la ventana (coordenadas de esquina inferior izquierda - iteración)
-                    #   De fuera hacia dentro
-                    start_xy = [x+n-k, y+n-k]
+                    # Recorre los n cuadrados de vecinos
+                    for k in range(0,n):
 
-                    # Incremento del recorrido
-                    inc = -1
+                        # Inicio de la ventana (coordenadas de esquina inferior izquierda - iteración)
+                        #   De fuera hacia dentro
+                        start_xy = [x+n-k, y+n-k]
 
-
-                    # Para los cuatro lados del cuadrado
-                    for h in range(0,4):
-                        
-                        # Para cada casilla de un lado (cada lado tiene 2 veces la distancia al vecino actual (n-k))
-                        for f in range(0, 2*(n-k)):
+                        # Incremento del recorrido
+                        inc = -1
 
 
-                            # TODO: ver que condición poner primero de las dos siguientes
-                            # Si la casilla explorada está dentro del tablero
-                            if (start_xy[0] < 20 and start_xy[0] > 0) and (start_xy[1] < 20 and start_xy[1] > 0):
-                                
-                                if self.start_found is not True:
-                                        self.start_found = True
-                                        # self.start_possible_x = i
-                                        # self.start_possible_y = j
-
-                                # Si la casilla a explorar es un hueco y no está en la lista de posibles (con la tabla Hash)
-                                if self.m_board[start_xy[0]][start_xy[1]] == Defines.NOSTONE and tuple([start_xy[0], start_xy[1]]) not in seen:
-
-                                    # Se añade a la lista de posibles y la tabla Hash
-                                    possibles.insert(0, [start_xy[0], start_xy[1]])
-                                    seen.add(tuple([start_xy[0], start_xy[1]]))
-
-                                    # self.end_possible_x = max(self.end_possible_x, i)
-                                    # self.end_possible_y = max(self.end_possible_y, j)
-
-
-
-                            # Intento de condición de cortar: alomejor faltan al explorar
-                            # elif inc < 0:
-                            #     start_xy[indices] += inc*(2*(n-k) - f+1)
-                            #     break
+                        # Para los cuatro lados del cuadrado
+                        for h in range(0,4):
                             
-                            # Incremento de la posición según la dirección (indices)
-                            start_xy[indices] += inc
-                        
-                        # Cambia el incremento para hacer: hacia arriba (izq) - derecha (arriba) - abajo (dcha) - izquierda (abajo) 
-                        if h == 1:
-                            inc = 1
-                        
-                        # Cambia el índice para moverse: Y - X - (-Y) - (-X) --> el '-' es para la dirección que marca "indices"
-                        if indices == 1:
-                            indices = 0
-                        else:
-                            indices = 1
+                            # Para cada casilla de un lado (cada lado tiene 2 veces la distancia al vecino actual (n-k))
+                            for f in range(0, 2*(n-k)):
 
 
-        score = self.max(possibles, depth, -math.inf, math.inf)
+                                # TODO: ver que condición poner primero de las dos siguientes
+                                # Si la casilla explorada está dentro del tablero
+                                if (start_xy[0] < 20 and start_xy[0] > 0) and (start_xy[1] < 20 and start_xy[1] > 0):
+                                    
+                                    if self.start_found is not True:
+                                            self.start_found = True
+                                            
+                                    # Si la casilla a explorar es un hueco y no está en la lista de posibles (con la tabla Hash)
+                                    if self.m_board[start_xy[0]][start_xy[1]] == Defines.NOSTONE and tuple([start_xy[0], start_xy[1]]) not in seen:
+
+                                        # Se añade a la lista de posibles y la tabla Hash
+
+                                        possibles.insert(n-k-1, [start_xy[0], start_xy[1]])
+                                        seen.add(tuple([start_xy[0], start_xy[1]]))
+                                
+                                # Incremento de la posición según la dirección (indices)
+                                start_xy[indices] += inc
+                            
+                            # Cambia el incremento para hacer: hacia arriba (izq) - derecha (arriba) - abajo (dcha) - izquierda (abajo) 
+                            if h == 1:
+                                inc = 1
+                            
+                            # Cambia el índice para moverse: Y - X - (-Y) - (-X) --> el '-' es para la dirección que marca "indices"
+                            if indices == 1:
+                                indices = 0
+                            else:
+                                indices = 1
+
+        flag = False
+
+        list_e_h = []
+
+        list_e_v = []
+
+        list_e_d = []
+
+        list_e_d2 = []
+
+        winning_move = []
+        
+        for i in range(1, Defines.GRID_NUM - 1):
+            if flag:
+                break
+
+            for j in range(1, Defines.GRID_NUM - 1):
+                
+                count_h = 0
+                list_e_h = []
+
+                count_v = 0
+                list_e_v = []
+
+                count_d = 0
+                list_e_d = []
+
+                count_d2 = 0
+                list_e_d2 = []
+
+
+                x = j
+                y = i
+                
+                for k in range(0,6):
+                    # Jugador
+                    # Vertical
+                    if x + 6 < 20 and tuple([x + k,y]):# not in seen_v_threats:
+                        stone = self.m_board[x + k][y]
+
+                        if stone is self.ourColor:
+                            count_v +=  1
+                        elif stone is Defines.NOSTONE:
+                            list_e_v.append([x + k, y])
+
+                            right_e_v = x+k
+
+                    # Horizontal: está cambiado para que haga [y,x]
+                    if x + 6 < 20 and tuple([y,x + k]):# not in seen_h_threats:
+                        stone = self.m_board[y][x+k]
+
+                        if stone is self.ourColor:
+                            count_h +=  1
+                        elif stone is Defines.NOSTONE:
+                            list_e_h.append([y, x + k])
+
+                            right_e_h = x + k
+
+                #     # # Diag
+                    if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]):# not in seen_d_threats:
+                        stone = self.m_board[x + k][y + k]
+
+                        if stone is self.ourColor:
+                            count_d +=  1
+                        elif stone is Defines.NOSTONE:
+                            list_e_d.append([x + k, y + k])
+
+                            right_e_d = [x + k,y + k]
+
+                #     # # Diag 2
+                    if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]):# not in seen_d2_threats:
+                        stone = self.m_board[x + k][y - k]
+
+                        if stone is self.ourColor:
+                            count_d2 +=  1
+                            
+                        elif stone is Defines.NOSTONE:
+                            list_e_d2.append([x + k, y-k])
+
+                            right_e_d2 = [x + k,y - k]
+                    
+                if count_v == 4 and len(list_e_v) == 2: 
+                    #h_threats.append([x,right_e_h])
+                    # seen_v_threats.add(tuple([right_e_v, y]))
+
+                    flag = True
+                    winning_move = list_e_v
+                    break
+
+                if count_h == 4 and len(list_e_h) == 2:
+                    #v_threats.append([right_e_v, x])
+                    # seen_h_threats.add(tuple([y, right_e_h]))
+
+                    flag = True
+                    winning_move = list_e_h
+                    break
+
+                if count_d == 4 and len(list_e_d) == 2:
+                    #d_threats.append([right_e_d[0], right_e_d[1]])
+                    # seen_d_threats.add(tuple([right_e_d[0], right_e_d[1]]))
+                    
+                    flag = True
+                    winning_move = list_e_d
+                    break
+
+                if count_d2 == 4 and len(list_e_d2) == 2:
+                    #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+                    # seen_d2_threats.add(tuple([right_e_d2[0], right_e_d2[1]]))
+
+                    flag = True
+                    winning_move = list_e_d2
+                    break
+        
+        if flag:
+            print("HE GANADO")
+            return [math.inf, winning_move]
+        else:
+            score = self.max(possibles, depth, -math.inf, math.inf)
         
         return score
     
@@ -209,7 +319,7 @@ class SearchEngine():
                 else:
                     color = Defines.WHITE
 
-            # idx_i = 0
+            idx_i = 0
 
             # v = []
 
@@ -236,9 +346,6 @@ class SearchEngine():
 
             #     possibles.insert(idx_v, m)
             #     idx_v += 1
-
-
-            
             
             # Por cada valor posible, establece todas las combinaciones posibles
             for i in possibles:
@@ -516,13 +623,19 @@ class SearchEngine():
 
 
     def threats(self, color):
-        ourColor = color
+        color_2 = color
+        
+        if color ==Defines.WHITE:
+            color_2 = Defines.BLACK
+        else:
+            color_2 = Defines.WHITE
+
         num_threats = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
         
-
+        # Jugador
         h_threats = []
         seen_h_threats = set(h_threats)
         
@@ -535,9 +648,29 @@ class SearchEngine():
         d2_threats = []
         seen_d2_threats = set(d2_threats)
 
+
+        # # Rival
+        # num_threats_2 = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+        #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+        
+
+        # h_threats_2 = []
+        # seen_h_threats_2 = set(h_threats_2)
+        
+        # v_threats_2 = []
+        # seen_v_threats_2 = set(v_threats_2)
+
+        # d_threats_2 = []
+        # seen_d_threats_2 = set(d_threats_2)
+
+        # d2_threats_2 = []
+        # seen_d2_threats_2 = set(d2_threats_2)
+
         for i in range(1, Defines.GRID_NUM - 1):
             for j in range(1, Defines.GRID_NUM - 1):
-                
+                # Jugador
                 count_h = 0
                 count_e_h = 0
 
@@ -553,22 +686,43 @@ class SearchEngine():
                 count_d2 = 0
                 count_e_d2 = 0
 
-                x = j
-                y = i
-
                 right_e_h = 0
                 right_e_v = 0
                 right_e_d = [0,0]
                 right_e_d2 = [0,0]
                 
+                # # Rival
+                # count_h_2 = 0
+                # count_e_h_2 = 0
+
+                # count_v_2 = 0
+                # count_e_v_2 = 0
+
+                # count_d_2 = 0
+                # count_e_d_2 = 0
+
+                # count_d_2 = 0
+                # count_e_d_2 = 0
+
+                # count_d2_2 = 0
+                # count_e_d2_2 = 0
+
+                # right_e_h_2 = 0
+                # right_e_v_2 = 0
+                # right_e_d_2 = [0,0]
+                # right_e_d2_2 = [0,0]
+                
+                # Iteradores
+                x = j
+                y = i
                 
                 for k in range(0,6):
-                
+                    # Jugador
                     # Vertical
                     if x + 6 < 20 and tuple([x + k,y]) not in seen_v_threats:
                         stone = self.m_board[x + k][y]
 
-                        if stone is ourColor:
+                        if stone is color:
                             count_v +=  1
                         elif stone is Defines.NOSTONE:
                             count_e_v += 1
@@ -579,7 +733,7 @@ class SearchEngine():
                     if x + 6 < 20 and tuple([y,x + k]) not in seen_h_threats:
                         stone = self.m_board[y][x+k]
 
-                        if stone is ourColor:
+                        if stone is color:
                             count_h +=  1
                         elif stone is Defines.NOSTONE:
                             count_e_h += 1
@@ -590,7 +744,7 @@ class SearchEngine():
                     if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]) not in seen_d_threats:
                         stone = self.m_board[x + k][y + k]
 
-                        if stone is ourColor:
+                        if stone is color:
                             count_d +=  1
                         elif stone is Defines.NOSTONE:
                             count_e_d += 1
@@ -601,21 +755,67 @@ class SearchEngine():
                     if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]) not in seen_d2_threats:
                         stone = self.m_board[x + k][y - k]
 
-                        if stone is ourColor:
+                        if stone is color:
                             count_d2 +=  1
                             
                         elif stone is Defines.NOSTONE:
                             count_e_d2 += 1
 
                             right_e_d2 = [x + k,y - k]
-                
+                    
+                    # Rival
+                    # Vertical
+                #     if x + 6 < 20 and tuple([x + k,y]) not in seen_v_threats_2:
+                #         stone = self.m_board[x + k][y]
 
+                #         if stone is color_2:
+                #             count_v_2 +=  1
+                #         elif stone is Defines.NOSTONE:
+                #             count_e_v_2 += 1
+
+                #             right_e_v_2 = x+k
+
+                #     # Horizontal: está cambiado para que haga [y,x]
+                #     if x + 6 < 20 and tuple([y,x + k]) not in seen_h_threats_2:
+                #         stone = self.m_board[y][x+k]
+
+                #         if stone is color_2:
+                #             count_h_2 +=  1
+                #         elif stone is Defines.NOSTONE:
+                #             count_e_h_2 += 1
+
+                #             right_e_h_2 = x + k
+
+                # #     # # Diag
+                #     if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]) not in seen_d_threats_2:
+                #         stone = self.m_board[x + k][y + k]
+
+                #         if stone is color_2:
+                #             count_d_2 +=  1
+                #         elif stone is Defines.NOSTONE:
+                #             count_e_d_2 += 1
+
+                #             right_e_d_2 = [x + k,y + k]
+
+                # #     # # Diag 2
+                #     if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]) not in seen_d2_threats_2:
+                #         stone = self.m_board[x + k][y - k]
+
+                #         if stone is color_2:
+                #             count_d2_2 +=  1
+                            
+                #         elif stone is Defines.NOSTONE:
+                #             count_e_d2_2 += 1
+
+                #             right_e_d2_2 = [x + k,y - k]
+                
+                # Jugador
                 if count_v == 4 and count_e_v == 2: 
                     #h_threats.append([x,right_e_h])
                     seen_v_threats.add(tuple([right_e_v, y]))
 
                     num_threats[0][y-1] += 1
-    
+                    
                 if count_h == 4 and count_e_h == 2:
                     #v_threats.append([right_e_v, x])
                     seen_h_threats.add(tuple([y, right_e_h]))
@@ -626,35 +826,80 @@ class SearchEngine():
                     #d_threats.append([right_e_d[0], right_e_d[1]])
                     seen_d_threats.add(tuple([right_e_d[0], right_e_d[1]]))
                     
-                    num_threats[2][x - y -1] += 1
-                    
+                    num_threats[2][x - y -2] += 1
                     
                 if count_d2 == 4 and count_e_d2 == 2:
                     #d2_threats.append([right_e_d2[0], right_e_d2[1]])
                     seen_d2_threats.add(tuple([right_e_d2[0], right_e_d2[1]]))
 
-                    num_threats[3][x + y -1] += 1
-        
+                    num_threats[3][x + y -2] += 1
+
+
+
+                # # Rival
+                # if count_v_2 == 4 and count_e_v_2 == 2: 
+                #     #h_threats.append([x,right_e_h])
+                #     seen_v_threats_2.add(tuple([right_e_v_2, y]))
+
+                #     num_threats_2[0][y-1] += 1
+    
+                # if count_h_2 == 4 and count_e_h_2 == 2:
+                #     #v_threats.append([right_e_v, x])
+                #     seen_h_threats_2.add(tuple([y, right_e_h_2]))
+
+                #     num_threats_2[1][y-1] += 1
+                    
+                # if count_d_2 == 4 and count_e_d_2 == 2:
+                #     #d_threats.append([right_e_d[0], right_e_d[1]])
+                #     seen_d_threats_2.add(tuple([right_e_d_2[0], right_e_d_2[1]]))
+                    
+                #     num_threats_2[2][x - y -2] += 1
+                    
+                # if count_d2_2 == 4 and count_e_d2_2 == 2:
+                #     #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+                #     seen_d2_threats_2.add(tuple([right_e_d2_2[0], right_e_d2_2[1]]))
+
+                #     num_threats_2[3][x + y -2] += 1
+    
         score = 0
         
         
         for (i, j, k, l) in itertools.zip_longest(num_threats[0], num_threats[1], num_threats[2], num_threats[3]):
+            
+            # Jugador
             if i==3 or j == 3 or k == 3 or l == 3:
                 score = math.inf
                 break
             
             if i is not None and i != 0:
-                score += i**i
+                score += i**i**i
             
             if j is not None and j != 0:
-                score += j**j
+                score += j**j**j
 
             if k is not None and k != 0:
-                score += k**k
+                score += k**k**k
 
             if l is not None and l != 0:
-                score += l**l
-        
+                score += l**l**l
+            
+
+            # # Rival
+            # if i_2 ==3 or j_2 == 3 or k_2 == 3 or l_2 == 3:
+            #     score = -math.inf
+            #     break
+            
+            # if i_2 is not None and i_2 != 0:
+            #     score -= i_2**i_2**i_2
+            
+            # if j_2 is not None and j_2 != 0:
+            #     score -= j_2**j_2**j_2
+
+            # if k_2 is not None and k_2 != 0:
+            #     score -= k_2**k_2**k_2
+
+            # if l_2 is not None and l_2 != 0:
+            #     score -= l_2**l_2**k_2
         # if score > 0:
         #     print(score)
             
