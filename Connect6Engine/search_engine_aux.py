@@ -103,7 +103,7 @@ class SearchEngine():
         n = 2
         
         # Doble bucle para recorrer todos los movimientos previos del tablero 
-        for o in reversed(self.pre_move):
+        for o in self.pre_move:
             for i in o.positions:
 
                 # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
@@ -285,36 +285,57 @@ class SearchEngine():
                     winning_move = list_e_d2
                     break
         
-        if flag:
-            print("HE GANADO")
-            return [math.inf, winning_move]
+        # if flag:
+        #     print("HE GANADO")
+        #     return [math.inf, winning_move]
+        # else:
+        #     score = self.max(possibles, depth, -math.inf, math.inf)
+        move = StoneMove()
+        move2 = StoneMove()
+        color = self.ourColor
+
+        if color == Defines.WHITE:
+            color = Defines.BLACK
         else:
-            score = self.max(possibles, depth, -math.inf, math.inf)
+            color = Defines.WHITE
 
+        move.positions[0].x = 9
+        move.positions[0].y = 10
+        move.positions[1].x = 9
+        move.positions[1].y = 11
+        
+        move2.positions[0].x = 9
+        move2.positions[0].y = 12
+        move2.positions[1].x = 9
+        move2.positions[1].y = 13
 
-        return score
+        make_move(self.m_board, move, color)
+        make_move(self.m_board, move2, color)
+
+        _ = self.threats(self.ourColor)
+
+        return [0, [[10, 10], [10, 10]]]
     
 
     def max(self, possibles, depth, alpha, beta, turn = 1):
         score = [0, [[-1, -1], [-1, -1]]]
 
         if depth == 0:
-            if self.turn >= 0:
-                score[0] = self.threats(self.ourColor)
+            score[0] = self.threats(self.ourColor)
 
-            else:
-                for i in range(1, Defines.GRID_NUM - 1):
-                    for j in range(1, Defines.GRID_NUM - 1):
+            # else:
+            #     for i in range(1, Defines.GRID_NUM - 1):
+            #         for j in range(1, Defines.GRID_NUM - 1):
                         
-                        # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
-                        x = Defines.GRID_NUM - 1 - j
-                        y = i
-                        stone = self.m_board[x][y]
+            #             # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 
+            #             x = Defines.GRID_NUM - 1 - j
+            #             y = i
+            #             stone = self.m_board[x][y]
                         
-                        # Si no hay una pieza, busca el numero de fichas en la fila
-                        if stone is not Defines.NOSTONE:
-                            score[0] += self.find_file(x,y)
-            
+            #             # Si no hay una pieza, busca el numero de fichas en la fila
+            #             if stone is not Defines.NOSTONE:
+            #                 score[0] += self.find_file(x,y)
+
             return score
 
         else:
@@ -329,6 +350,32 @@ class SearchEngine():
                     color = Defines.WHITE
 
             idx_i = 0
+
+            # v = []
+
+            # idx_v = 0
+
+            # for m in possibles:
+            #     possibles.remove(m)
+            #     idx = 0
+
+            #     for n in possibles:
+            #         move.positions[0].x = m[0]
+            #         move.positions[0].y = m[1]
+            #         move.positions[1].x = n[0]  
+            #         move.positions[1].y = n[1]
+
+            #         make_move(self.m_board, move, color)
+
+                    
+            #         move.score = self.threats(color)
+            #         v.append(move)
+
+            #         make_move(self.m_board, move, Defines.NOSTONE)
+            #         idx += 1
+
+            #     possibles.insert(idx_v, m)
+            #     idx_v += 1
             
             # Por cada valor posible, establece todas las combinaciones posibles
             for i in possibles:
@@ -369,9 +416,6 @@ class SearchEngine():
                 
                 possibles.insert(idx_i, i)
                 idx_i += 1
-
-
-
         return score
                     
     # def min(self, possibles, depth, alpha, beta):
@@ -558,9 +602,9 @@ class SearchEngine():
     def find_file(self, ini_x = 1, ini_y = 1):
         count = 0        
         
-        if ini_x < 1 and ini_y > 20:
+        if ini_x < 1 and ini_y > 19:
             print("\n\n cuidado \n\n")
-            return 0
+            return -1
 
         else:
             stone = self.m_board[ini_x][ini_y]
@@ -652,26 +696,28 @@ class SearchEngine():
 
         # Y
         start_i = max(self.start_possible_y - 2, 1)
-        end_i = min(self.end_possible_y + 3, Defines.GRID_NUM - 1)
+        end_i = min(self.end_possible_y + 2, Defines.GRID_NUM - 1)
 
         # x = Defines.GRID_NUM - 1 - j
         # y = i
         # stone = self.m_board[x][y]
 
-        start_j = max(Defines.GRID_NUM - 1 - self.start_possible_x - 2, 1)
+        start_j = min(Defines.GRID_NUM - 1 - self.start_possible_x - 2, Defines.GRID_NUM - 1)
+        end_j = max(Defines.GRID_NUM - 1 - self.end_possible_x + 2, 1)
         
-        if start_j < 1:
-            start_j = 1
+        print(start_i, " ", self.start_possible_y)
+        print(end_i, " ", self.end_possible_y)
+        print(start_j, " ", self.start_possible_x)
+        print(end_j, " ", self.end_possible_x)
 
-        end_j = min(Defines.GRID_NUM - 1 - self.end_possible_x + 3, Defines.GRID_NUM - 1)
-        
+        # TODO: CON EL BUCLE ENTERO, NO SE PORQUE NO FUNCIONA CON LOS INTERVALOS
+        # Con el j en el de arriba va bien, comprobar las otras direcciones
+        #  en clase estaba muy cansado y sin raton
 
-        score = 0
-        score_2 = 0
-        
-
-        for i in range(start_j, end_j):
-            for j in reversed(range(start_i, end_i)):
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
+        # for i in range(start_j, end_j):
+        #     for j in range(1, Defines.GRID_NUM - 1):
                 # Jugador
                 count_h = 0
                 count_e_h = 0
@@ -715,25 +761,24 @@ class SearchEngine():
                 right_e_d2_2 = [0,0]
                 
                 # Iteradores
-                x = Defines.GRID_NUM - 1 - j
+                x = j
                 y = i
-
-                for k in (range(0,6)):
+                
+                for k in range(0,6):
                     # Jugador
                     # Vertical
-                    if x + 6 <= 20 and tuple([x + k,y]) not in seen_v_threats:
+                    if x + 6 < 20 and tuple([x + k,y]) not in seen_v_threats:
                         stone = self.m_board[x + k][y]
 
                         if stone is color:
                             count_v +=  1
-
                         elif stone is Defines.NOSTONE:
                             count_e_v += 1
 
                             right_e_v = x+k
 
                     # Horizontal: está cambiado para que haga [y,x]
-                    if x + 6 <= 20 and tuple([y,x + k]) not in seen_h_threats:
+                    if x + 6 < 20 and tuple([y,x + k]) not in seen_h_threats:
                         stone = self.m_board[y][x+k]
 
                         if stone is color:
@@ -744,7 +789,7 @@ class SearchEngine():
                             right_e_h = x + k
 
                 #     # # Diag
-                    if y + 6 <= 20 and x + 6 <= 20  and tuple([x + k,y + k]) not in seen_d_threats:
+                    if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]) not in seen_d_threats:
                         stone = self.m_board[x + k][y + k]
 
                         if stone is color:
@@ -755,8 +800,8 @@ class SearchEngine():
                             right_e_d = [x + k,y + k]
 
                 #     # # Diag 2
-                    if x - 6 >= 0 and y + 6 <= 20  and tuple([y + k,x - k]) not in seen_d2_threats:
-                        stone = self.m_board[y + k][x - k]
+                    if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]) not in seen_d2_threats:
+                        stone = self.m_board[x + k][y - k]
 
                         if stone is color:
                             count_d2 +=  1
@@ -764,25 +809,27 @@ class SearchEngine():
                         elif stone is Defines.NOSTONE:
                             count_e_d2 += 1
 
-                            right_e_d2 = [y + k,x - k]
+                            right_e_d2 = [x + k,y - k]
                     
                     # Rival
                     # Vertical
-                    if x + 6 <= 20 and  tuple([x + k,y]) not in seen_v_threats_2:
+                    if x + 6 < 20 and tuple([x + k,y]) not in seen_v_threats_2:
                         stone = self.m_board[x + k][y]
 
                         if stone is color_2:
                             count_v_2 +=  1
-
                         elif stone is Defines.NOSTONE:
                             count_e_v_2 += 1
 
                             right_e_v_2 = x+k
 
-                            
+                        # print(x,y)
+                        # print(count_v_2)
+                        # print(count_e_v_2)
+                        # print("")
 
                     # Horizontal: está cambiado para que haga [y,x]
-                    if x + 6 <= 20 and tuple([y,x + k]) not in seen_h_threats_2:
+                    if x + 6 < 20 and tuple([y,x + k]) not in seen_h_threats_2:
                         stone = self.m_board[y][x+k]
 
                         if stone is color_2:
@@ -793,7 +840,7 @@ class SearchEngine():
                             right_e_h_2 = x + k
 
                 #     # # Diag    /
-                    if y + 6 <= 20 and x + 6 <= 20  and tuple([x + k,y + k]) not in seen_d_threats_2:
+                    if y + 6 < 20 and x + 6 < 20  and tuple([x + k,y + k]) not in seen_d_threats_2:
                         stone = self.m_board[x + k][y + k]
 
                         if stone is color_2:
@@ -804,8 +851,8 @@ class SearchEngine():
                             right_e_d_2 = [x + k,y + k]
 
                 #     # # Diag 2   \
-                    if x - 6 >= 0 and y + 6 <= 20  and tuple([y + k,x - k]) not in seen_d2_threats_2:
-                        stone = self.m_board[y + k][x - k]
+                    if y - 6 >= 0 and x + 6 < 20  and tuple([x + k,y - k]) not in seen_d2_threats_2:
+                        stone = self.m_board[x + k][y - k]
 
                         if stone is color_2:
                             count_d2_2 +=  1
@@ -813,15 +860,14 @@ class SearchEngine():
                         elif stone is Defines.NOSTONE:
                             count_e_d2_2 += 1
 
-                            right_e_d2_2 = [y + k,x - k]
-
+                            right_e_d2_2 = [x + k,y - k]
+                
                 # Jugador
                 if count_v == 4 and count_e_v == 2: 
                     #h_threats.append([x,right_e_h])
                     seen_v_threats.add(tuple([right_e_v, y]))
 
                     num_threats[0][y-1] += 1
-                    
                     
                 if count_h == 4 and count_e_h == 2:
                     #v_threats.append([right_e_v, x])
@@ -849,7 +895,6 @@ class SearchEngine():
                     seen_v_threats_2.add(tuple([right_e_v_2, y]))
 
                     num_threats_2[0][y-1] += 1
-
     
                 if count_h_2 == 4 and count_e_h_2 == 2:
                     #v_threats.append([right_e_v, x])
@@ -863,7 +908,7 @@ class SearchEngine():
                     seen_d_threats_2.add(tuple([right_e_d_2[0], right_e_d_2[1]]))
                     
                     num_threats_2[2][x - y -2] += 1
-
+                    print("AA")
 
                 # \ 
                 if count_d2_2 == 4 and count_e_d2_2 == 2:
@@ -871,13 +916,17 @@ class SearchEngine():
                     seen_d2_threats_2.add(tuple([right_e_d2_2[0], right_e_d2_2[1]]))
 
                     num_threats_2[3][x + y -2] += 1
-
+                    print("BB")
+    
+        score = 0
+        score_2 = 0
+        
         
         for i in range(len(num_threats[2])):
             # 2
             if num_threats_2[2][i] == 3:
-                score_2 += 100
-                
+                score_2 += math.inf
+                break
                 
                 
             
@@ -887,8 +936,8 @@ class SearchEngine():
             
             # 3
             if num_threats_2[3][i] == 3:
-                score_2 += 100
-                
+                score_2 += math.inf
+                break
                 
                 
             
@@ -898,8 +947,8 @@ class SearchEngine():
             # 0
             if i < len(num_threats[0]):
                 if num_threats_2[0][i] == 3:
-                    score_2 += 100
-                    
+                    score_2 += math.inf
+                    break
                     
                 if num_threats_2[0][i] is not None and num_threats_2[0][i] != 0:
                     score_2 += num_threats_2[0][i]**num_threats_2[0][i]**num_threats_2[0][i]
@@ -907,47 +956,53 @@ class SearchEngine():
 
 
                 if num_threats_2[1][i] == 3:
-                    score_2 += 100
-                    
+                    score_2 += math.inf
+                    break
                                     
                 if num_threats_2[1][i] is not None and num_threats_2[1][i] != 0:
                     score_2 += num_threats_2[1][i]**num_threats_2[1][i]**num_threats_2[1][i]
 
 
-                # 0
-                if num_threats[0][i] == 3:
-                    score = math.inf
-                    break
+                # # 0
+                # if num_threats[0][i] == 3:
+                #     score = math.inf
+                #     break
 
-                if num_threats[0][i] is not None and num_threats[0][i] != 0:
-                    score += num_threats[0][i]**num_threats[0][i]**num_threats[0][i]
+            #     if num_threats[0][i] is not None and num_threats[0][i] != 0:
+            #         score += num_threats[0][i]**num_threats[0][i]**num_threats[0][i]
                 
-                # 1
-                if num_threats[1][i] == 3:
-                    score = math.inf
-                    break
+            #     # 1
+            #     if num_threats[1][i] == 3:
+            #         score = math.inf
+            #         break
                 
-                if num_threats[1][i] is not None and num_threats[1][i] != 0:
-                    score += num_threats[1][i]**num_threats[1][i]**num_threats[1][i]
+            #     if num_threats[1][i] is not None and num_threats[1][i] != 0:
+            #         score += num_threats[1][i]**num_threats[1][i]**num_threats[1][i]
 
             
             # # 2
-            if num_threats[2][i] == 3:
-                score = math.inf
-                break
+            # if num_threats[2][i] == 3:
+            #     score = math.inf
+            #     break
             
-            if num_threats[2][i] is not None and num_threats[2][i] != 0:
-                score += num_threats[2][i]**num_threats[2][i]**num_threats[2][i]
+            # if num_threats[2][i] is not None and num_threats[2][i] != 0:
+            #     score += num_threats[2][i]**num_threats[2][i]**num_threats[2][i]
 
             
-            # 3
-            if num_threats[3][i] == 3:
-                score = math.inf
-                break
+            # # 3
+            # if num_threats[3][i] == 3:
+            #     score = math.inf
+            #     break
             
-            if num_threats[3][i] is not None and num_threats[3][i] != 0:
-                score += num_threats[3][i]**num_threats[3][i]**num_threats[3][i]
+            # if num_threats[3][i] is not None and num_threats[3][i] != 0:
+            #     score += num_threats[3][i]**num_threats[3][i]**num_threats[3][i]
 
+        
+        if score_2 > 0:
+            print(score_2)
+            print(num_threats_2)
+            
+            
 
         return -score_2
             
