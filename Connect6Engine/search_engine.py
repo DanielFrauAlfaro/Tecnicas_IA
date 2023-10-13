@@ -371,8 +371,8 @@ class SearchEngine():
 
                     make_move(self.m_board, move, Defines.NOSTONE)
                 
-                # possibles.insert(idx_i, i)
-                # idx_i += 1
+                possibles.insert(idx_i, i)
+                idx_i += 1
 
 
 
@@ -451,8 +451,8 @@ class SearchEngine():
 
                     make_move(self.m_board, move, Defines.NOSTONE)
 
-                # possibles.insert(idx, i)
-                # idx += 1
+                possibles.insert(idx, i)
+                idx += 1
 
         return score
 
@@ -659,19 +659,19 @@ class SearchEngine():
         seen_d2_threats_2 = set(d2_threats_2)
 
         # Y
-        start_i = max(self.start_possible_y - 3, 1)
-        end_i = min(self.end_possible_y + 3, Defines.GRID_NUM - 1)
+        start_i = max(self.start_possible_y - 2, 1)
+        end_i = min(self.end_possible_y + 2, Defines.GRID_NUM - 1)
 
         # x = Defines.GRID_NUM - 1 - j
         # y = i
         # stone = self.m_board[x][y]
 
-        start_j = max(Defines.GRID_NUM - 1 - self.start_possible_x - 3, 1)
+        start_j = max(Defines.GRID_NUM - 1 - self.start_possible_x - 2, 1)
         
         if start_j < 1:
             start_j = 1
 
-        end_j = min(Defines.GRID_NUM - 1 - self.end_possible_x + 3, Defines.GRID_NUM - 1)
+        end_j = min(Defines.GRID_NUM - 1 - self.end_possible_x + 2, Defines.GRID_NUM - 1)
         
         # print(start_i, self.start_possible_y)
         # print(end_i, self.end_possible_y)
@@ -800,7 +800,6 @@ class SearchEngine():
                         if stone is color_2:
                             count_h_2 +=  1
                             
-
                         elif stone is Defines.NOSTONE:
                             count_e_h_2 += 1
 
@@ -1029,9 +1028,10 @@ class SearchEngine():
         # print(score)
         # print(score_2)
 
-        if score_2 > 0:
+        if score_2 > score:
             return -score_2
-        return -score_2
+        
+        return score
             
 
 def flush_output():
