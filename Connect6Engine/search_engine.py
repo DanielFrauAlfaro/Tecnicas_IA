@@ -68,24 +68,25 @@ class SearchEngine():
         self.pre_move = [StoneMove(), StoneMove()]
 
 
-    def before_search(self, board, color, alphabeta_depth, pre_move):
+    def before_search(self, board, color, alphabeta_depth):
         self.m_board = [row[:] for row in board]
         self.m_chess_type = color
         self.m_alphabeta_depth = alphabeta_depth
         self.m_total_nodes = 0
         
         # Si es el primer turno, coloca el movimiento donde lo pone el rival o en (10, 10)        
-        if self.turn == 0:
-            self.pre_move[1] = pre_move
+        # if self.turn == 0:
+        #     self.pre_move[1] = pre_move
         
-        # Actualiza el movimiento anterior
-        self.pre_move[0] = pre_move
+        # # Actualiza el movimiento anterior
+        # self.pre_move[0] = pre_move
 
 
     # Función para el Alpha - Beta
     def alpha_beta_search(self, depth, alpha, beta, ourColor, bestMove, preMove):
         
         self.ourColor = ourColor
+        self.m_alphabeta_depth = 2
         
         #Check game result
         if (is_win_by_premove(self.m_board, preMove)):
@@ -98,8 +99,11 @@ class SearchEngine():
                 #Self wins.
                 return Defines.MININT + 1
 
+        self.pre_move[0] = preMove
+        if self.turn == 0:
+            self.pre_move[1] = preMove
+
         self.turn += 2
-        
         
         alpha = 0
         # Primer turno
@@ -298,9 +302,14 @@ class SearchEngine():
 
         # N vecinos cercanos
         n = 2
+
+        idx = 0
         
         # Doble bucle para recorrer todos los movimientos previos del tablero 
-        for o in (self.pre_move):
+        for o in reversed(self.pre_move):
+            if idx == 1:
+                n = 3
+            idx += 1
             for i in o.positions:        
 
                 # Cambio de coordenadas de [1,1] a [19,1] propia del tablero 

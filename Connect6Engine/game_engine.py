@@ -89,8 +89,6 @@ class GameEngine:
             elif msg.startswith("move"):
                 self.m_best_move = msg2move(msg[5:])
                 
-                self.prev_move = self.m_best_move
-
                 make_move(self.m_board, self.m_best_move, self.m_chess_type ^ 3)
                 if is_win_by_premove(self.m_board, self.m_best_move):
                     print("We lost!")
@@ -114,7 +112,7 @@ class GameEngine:
         end = 0
 
         start = time.perf_counter()
-        self.m_search_engine.before_search(self.m_board, self.m_chess_type, self.m_alphabeta_depth, self.prev_move)
+        self.m_search_engine.before_search(self.m_board, self.m_chess_type, self.m_alphabeta_depth)
         score = self.m_search_engine.alpha_beta_search(self.m_alphabeta_depth, Defines.MININT, Defines.MAXINT, ourColor, bestMove, bestMove)
         end = time.perf_counter()
 
@@ -140,211 +138,217 @@ def gen_random_vector():
 
 # Create an instance of GameEngine and run the game
 if __name__ == "__main__":
-    # Hiperparámetros
-    N_epochs = 10
-    N_pop = 20
-    N_turns = 10
-    N_fathers_pairs = 2
-    N_params = 6
-    std_mutation = 2.5
-    mutation_limit = 0.3
+    train = False
 
-    search_engine = []
+    game_engine = GameEngine()
+    game_engine.run()
 
-    game_ = GameEngine()
+    if train == True:
+        # Hiperparámetros
+        N_epochs = 10
+        N_pop = 20
+        N_turns = 10
+        N_fathers_pairs = 2
+        N_params = 6
+        std_mutation = 2.5
+        mutation_limit = 0.3
 
-    # Generación de población inicial aleatoria
-    for i in range(0, N_pop):
-        search_engine_ = SearchEngine()
-
-        params = gen_random_vector()
-
-        search_engine_.set_params(params)
-
-        search_engine.append([0, search_engine_])
-
-
-    # ---- Algoritmo genético. Entrenamientos ----
-    for i in range(0, N_epochs):
-
-        print("EPOCH ", i)
-
-        idx_j = -1
-
-        # Partidas cruzadas
-        for j in search_engine:
-            print("Evaluating ", idx_j + 1)
-            idx_j += 1
-            idx_k = 0
-
-            for k in search_engine:
-                
-                # Si no son el mismo
-                if j[1].get_params() != k[1].get_params():
-                    print("-- Match ", idx_j, " VS ", idx_k)
-                    
-                    # Inicializa los movimientos
-                    bestMove_1 = StoneMove()
-                    bestMove_1.positions[0].x = 10
-                    bestMove_1.positions[0].y = 10
-                    bestMove_1.positions[1].x = 10
-                    bestMove_1.positions[1].y = 10
-
-                    bestMove_2 = StoneMove()
-                    bestMove_2.positions[0].x = 10
-                    bestMove_2.positions[0].y = 10
-                    bestMove_2.positions[1].x = 10
-                    bestMove_2.positions[1].y = 10
-
-                    # Puntuación de cada agente
-                    score_1 = 0
-                    score_2 = 0
-
-                    # Turnos
-                    for _ in range(0, N_turns):
-                        
-                        # Turno de BLACK
-                        k[1].before_search(game_.m_board, Defines.BLACK, 2, bestMove_1)
-                        score_2 += k[1].alpha_beta_search(2, Defines.MININT, Defines.MAXINT, Defines.BLACK, bestMove_2, bestMove_2)
-                        make_move(game_.m_board, bestMove_2, Defines.BLACK)
-                        
-                        # Gana WHITE
-                        if is_win_by_premove(game_.m_board, bestMove_2):
-                            make_move(game_.m_board, bestMove_1, Defines.WHITE)
-                            # print_board(game_.m_board)
-
-                            print("---- Fin partida: Gana ", idx_k)
-                            k[0] += 10000
-                            j[0] -= 2000
-
-                            break
-            
-                        # print_board(game_.m_board)
-                        
-                        # Turno de WHITE
-                        j[1].before_search(game_.m_board, Defines.WHITE, 2, bestMove_2)
-                        score_1 += j[1].alpha_beta_search(2, Defines.MININT, Defines.MAXINT, Defines.WHITE, bestMove_1, bestMove_1)
-                        make_move(game_.m_board, bestMove_1, Defines.WHITE)
-                        
-                        # Gana BLACK
-                        if is_win_by_premove(game_.m_board, bestMove_1):
-                            make_move(game_.m_board, bestMove_2, Defines.BLACK)
-                            # print_board(game_.m_board)
-
-                            print("---- Fin partida: Gana ", idx_j)
-                            j[0] += 10000
-                            k[0] -= 7000
-
-                            break
-
-                        # print_board(game_.m_board)
-
-                    
-                    # Suma de los scores
-                    j[0] += score_1                           
-                    k[0] += score_2
-
-                    # Satura a 0
-                    j[0] = max(0, j[0])
-                    k[0] = max(0, k[0])
-
-                    print("Score ", idx_j, " = ", j[0])
-                    print("Score ", idx_k, " = ", k[0])
-                    print("\n\n")
-
-                    # Reinicia los agentes
-                    k[1].restart()
-                    j[1].restart()
-
-                # Reinicia el tablero de juego
-                game_.init_game()
-                idx_k += 1
-
-        
-        print("\nFin de epoca ", i)
-        print("")
-
-        # Busca el mejor motor por su puntuación
-        max_engine = search_engine[0]
-        fitness_scores = []
-
-        for p in search_engine:
-            fitness_scores.append(p[0])
-
-            if p[0] > max_engine[0]:
-                max_engine = p 
-
-        max_score = max_engine[0]
-        fitness_scores.sort(reverse=True)
-
-        print("Search engine: ", search_engine)
-        print("Fitness Scores: ", fitness_scores)
-        print("")
-        print("Max Engine: ", max_engine)
-        print("Max Params: ", max_engine[1].get_params())
-        print("")
-
-        # Ordena los motores según su putnuación
-        parents = []
-        for w in fitness_scores:
-            for u in search_engine:
-                if u[0] == w:
-                    parents.append(u)
-                    break
-        
-        # Selecciona los mejores motores
-        num_parents = int(N_pop * 0.5)
-        parents = parents[:num_parents]
-
-        print("New parents: ", parents)
-        print("")
-
-        new_population = []
-
-        # Genera los hijos a partir de los padres
-        while len(new_population) < N_pop - num_parents:
-
-            # Selección de padres
-            parent1, parent2 = random.sample(parents, 2)
-            print("Parent 1: ", parent1[1].get_params())
-            print("Parent 2: ", parent2[1].get_params())
-            
-
-            # Cruce por punto aleatorio
-            crossover_point = random.randint(1, N_params - 1)
-            child = SearchEngine()
-            
-            child_params = parent1[1].get_params()[:crossover_point] + parent2[1].get_params()[crossover_point:]
-            child.set_params(child_params)
-
-            # Mutación
-            if random.random() < mutation_limit:
-                mutation_point = random.randint(0, N_params - 1)
-                
-                mut_params = gen_random_vector()
-
-                new_child = child.get_params()[:mutation_point] + mut_params[mutation_point:]
-
-                child.set_params(new_child)
-
-            new_population.append([0.0, child])
-            
-            print("New child: ", child.get_params())
-            print("\n\n")
-        
-        # Combina padres con hijos para obtener la nueva poblacion
         search_engine = []
 
-        for t in parents:
-            search_engine.append(t)
+        game_ = GameEngine()
 
-        for t in new_population:
-            search_engine.append(t)
+        # Generación de población inicial aleatoria
+        for i in range(0, N_pop):
+            search_engine_ = SearchEngine()
 
-        # search_engine = parents + new_population
+            params = gen_random_vector()
 
-        print("New population: ", search_engine)
-        print("")
+            search_engine_.set_params(params)
+
+            search_engine.append([0, search_engine_])
+
+
+        # ---- Algoritmo genético. Entrenamientos ----
+        for i in range(0, N_epochs):
+
+            print("EPOCH ", i)
+
+            idx_j = -1
+
+            # Partidas cruzadas
+            for j in search_engine:
+                print("Evaluating ", idx_j + 1)
+                idx_j += 1
+                idx_k = 0
+
+                for k in search_engine:
+                    
+                    # Si no son el mismo
+                    if j[1].get_params() != k[1].get_params():
+                        print("-- Match ", idx_j, " VS ", idx_k)
+                        
+                        # Inicializa los movimientos
+                        bestMove_1 = StoneMove()
+                        bestMove_1.positions[0].x = 10
+                        bestMove_1.positions[0].y = 10
+                        bestMove_1.positions[1].x = 10
+                        bestMove_1.positions[1].y = 10
+
+                        bestMove_2 = StoneMove()
+                        bestMove_2.positions[0].x = 10
+                        bestMove_2.positions[0].y = 10
+                        bestMove_2.positions[1].x = 10
+                        bestMove_2.positions[1].y = 10
+
+                        # Puntuación de cada agente
+                        score_1 = 0
+                        score_2 = 0
+
+                        # Turnos
+                        for _ in range(0, N_turns):
+                            
+                            # Turno de BLACK
+                            k[1].before_search(game_.m_board, Defines.BLACK, 2, bestMove_1)
+                            score_2 += k[1].alpha_beta_search(2, Defines.MININT, Defines.MAXINT, Defines.BLACK, bestMove_2, bestMove_2)
+                            make_move(game_.m_board, bestMove_2, Defines.BLACK)
+                            
+                            # Gana WHITE
+                            if is_win_by_premove(game_.m_board, bestMove_2):
+                                make_move(game_.m_board, bestMove_1, Defines.WHITE)
+                                # print_board(game_.m_board)
+
+                                print("---- Fin partida: Gana ", idx_k)
+                                k[0] += 10000
+                                j[0] -= 2000
+
+                                break
+                
+                            # print_board(game_.m_board)
+                            
+                            # Turno de WHITE
+                            j[1].before_search(game_.m_board, Defines.WHITE, 2, bestMove_2)
+                            score_1 += j[1].alpha_beta_search(2, Defines.MININT, Defines.MAXINT, Defines.WHITE, bestMove_1, bestMove_1)
+                            make_move(game_.m_board, bestMove_1, Defines.WHITE)
+                            
+                            # Gana BLACK
+                            if is_win_by_premove(game_.m_board, bestMove_1):
+                                make_move(game_.m_board, bestMove_2, Defines.BLACK)
+                                # print_board(game_.m_board)
+
+                                print("---- Fin partida: Gana ", idx_j)
+                                j[0] += 10000
+                                k[0] -= 7000
+
+                                break
+
+                            # print_board(game_.m_board)
+
+                        
+                        # Suma de los scores
+                        j[0] += score_1                           
+                        k[0] += score_2
+
+                        # Satura a 0
+                        j[0] = max(0, j[0])
+                        k[0] = max(0, k[0])
+
+                        print("Score ", idx_j, " = ", j[0])
+                        print("Score ", idx_k, " = ", k[0])
+                        print("\n\n")
+
+                        # Reinicia los agentes
+                        k[1].restart()
+                        j[1].restart()
+
+                    # Reinicia el tablero de juego
+                    game_.init_game()
+                    idx_k += 1
+
+            
+            print("\nFin de epoca ", i)
+            print("")
+
+            # Busca el mejor motor por su puntuación
+            max_engine = search_engine[0]
+            fitness_scores = []
+
+            for p in search_engine:
+                fitness_scores.append(p[0])
+
+                if p[0] > max_engine[0]:
+                    max_engine = p 
+
+            max_score = max_engine[0]
+            fitness_scores.sort(reverse=True)
+
+            print("Search engine: ", search_engine)
+            print("Fitness Scores: ", fitness_scores)
+            print("")
+            print("Max Engine: ", max_engine)
+            print("Max Params: ", max_engine[1].get_params())
+            print("")
+
+            # Ordena los motores según su putnuación
+            parents = []
+            for w in fitness_scores:
+                for u in search_engine:
+                    if u[0] == w:
+                        parents.append(u)
+                        break
+            
+            # Selecciona los mejores motores
+            num_parents = int(N_pop * 0.5)
+            parents = parents[:num_parents]
+
+            print("New parents: ", parents)
+            print("")
+
+            new_population = []
+
+            # Genera los hijos a partir de los padres
+            while len(new_population) < N_pop - num_parents:
+
+                # Selección de padres
+                parent1, parent2 = random.sample(parents, 2)
+                print("Parent 1: ", parent1[1].get_params())
+                print("Parent 2: ", parent2[1].get_params())
+                
+
+                # Cruce por punto aleatorio
+                crossover_point = random.randint(1, N_params - 1)
+                child = SearchEngine()
+                
+                child_params = parent1[1].get_params()[:crossover_point] + parent2[1].get_params()[crossover_point:]
+                child.set_params(child_params)
+
+                # Mutación
+                if random.random() < mutation_limit:
+                    mutation_point = random.randint(0, N_params - 1)
+                    
+                    mut_params = gen_random_vector()
+
+                    new_child = child.get_params()[:mutation_point] + mut_params[mutation_point:]
+
+                    child.set_params(new_child)
+
+                new_population.append([0.0, child])
+                
+                print("New child: ", child.get_params())
+                print("\n\n")
+            
+            # Combina padres con hijos para obtener la nueva poblacion
+            search_engine = []
+
+            for t in parents:
+                search_engine.append(t)
+
+            for t in new_population:
+                search_engine.append(t)
+
+            # search_engine = parents + new_population
+
+            print("New population: ", search_engine)
+            print("")
 
         # for t in search_engine:
         #     t[0] = int(t[0] / max_score * 100)
@@ -413,7 +417,7 @@ if __name__ == "__main__":
         # print("")
         
         # Actualizar poblacion
-        search_engine = new_population
+        # search_engine = new_population
 
             
             
