@@ -134,11 +134,15 @@ def gen_random_vector():
 
     return [vec[0][0], vec[0][1], vec[1][0], vec[2][0], vec[2][1], vec[3][0]]
 
+# MAX PARAMS EPOCH 1: [22, 8, 4, 49, 24, 1]  --> 25317176.0
+# EPOCH 2: [13, 8, 4, 49, 54, 2] --> 12099120.0
+# EPOCH 3: [13, 8, 2, 34, 36, 4] --> 11105668.0
+
 # Create an instance of GameEngine and run the game
 if __name__ == "__main__":
     # Hiperparámetros
     N_epochs = 10
-    N_pop = 4
+    N_pop = 20
     N_turns = 10
     N_fathers_pairs = 2
     N_params = 6
@@ -207,7 +211,7 @@ if __name__ == "__main__":
                         # Gana WHITE
                         if is_win_by_premove(game_.m_board, bestMove_2):
                             make_move(game_.m_board, bestMove_1, Defines.WHITE)
-                            print_board(game_.m_board)
+                            # print_board(game_.m_board)
 
                             print("---- Fin partida: Gana ", idx_k)
                             k[0] += 10000
@@ -215,7 +219,7 @@ if __name__ == "__main__":
 
                             break
             
-                        print_board(game_.m_board)
+                        # print_board(game_.m_board)
                         
                         # Turno de WHITE
                         j[1].before_search(game_.m_board, Defines.WHITE, 2, bestMove_2)
@@ -225,15 +229,15 @@ if __name__ == "__main__":
                         # Gana BLACK
                         if is_win_by_premove(game_.m_board, bestMove_1):
                             make_move(game_.m_board, bestMove_2, Defines.BLACK)
-                            print_board(game_.m_board)
+                            # print_board(game_.m_board)
 
                             print("---- Fin partida: Gana ", idx_j)
                             j[0] += 10000
-                            k[0] -= 2000
+                            k[0] -= 7000
 
                             break
 
-                        print_board(game_.m_board)
+                        # print_board(game_.m_board)
 
                     
                     # Suma de los scores
@@ -241,8 +245,12 @@ if __name__ == "__main__":
                     k[0] += score_2
 
                     # Satura a 0
-                    j[0] = max(0, score_1)
-                    k[0] = max(0, score_2)
+                    j[0] = max(0, j[0])
+                    k[0] = max(0, k[0])
+
+                    print("Score ", idx_j, " = ", j[0])
+                    print("Score ", idx_k, " = ", k[0])
+                    print("\n\n")
 
                     # Reinicia los agentes
                     k[1].restart()
@@ -325,7 +333,16 @@ if __name__ == "__main__":
             print("\n\n")
         
         # Combina padres con hijos para obtener la nueva poblacion
-        search_engine = parents + new_population
+        search_engine = []
+
+        for t in parents:
+            search_engine.append(t)
+
+        for t in new_population:
+            search_engine.append(t)
+
+        # search_engine = parents + new_population
+
         print("New population: ", search_engine)
         print("")
 

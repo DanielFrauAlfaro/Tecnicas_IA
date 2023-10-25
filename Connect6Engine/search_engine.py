@@ -27,15 +27,19 @@ class SearchEngine():
         # Turnos anteriores
         self.pre_move = [StoneMove(), StoneMove()]
 
+    # MAX PARAMS EPOCH 1: [22, 8, 4, 49, 24, 1]  --> 25317176.0
+# EPOCH 2: [13, 8, 4, 49, 54, 2] --> 12099120.0
+# EPOCH 3: [13, 8, 2, 34, 36, 4] --> 11105668.0
+
         # Parámetros
-        self.m_score = 0        # Ponderación score MAX 
-        self.m_score_2 = 0      # Ponderacion score MIN
+        self.m_score = 13        # Ponderación score MAX 
+        self.m_score_2 = 34      # Ponderacion score MIN
 
-        self.m_riv = 0          # Base del conteo de amenazas de MAX
-        self.m_pos = 0          # Base del conteo de amenazas de MIN
+        self.m_riv = 36          # Base del conteo de amenazas de MAX
+        self.m_pos = 8          # Base del conteo de amenazas de MIN
 
-        self.m_med_pos = 0      # Conteo de medias amenazas
-        self.m_med_riv = 0      # Conteo de medias amenazas
+        self.m_med_pos = 2      # Conteo de medias amenazas
+        self.m_med_riv = 4      # Conteo de medias amenazas
 
 
     # Getter de los parámetros
