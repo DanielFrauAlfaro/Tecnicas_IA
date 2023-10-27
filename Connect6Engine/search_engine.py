@@ -41,6 +41,8 @@ class SearchEngine():
         self.m_med_pos = 2      # Conteo de medias amenazas
         self.m_med_riv = 4      # Conteo de medias amenazas
 
+        self.dict_of_threats = {}
+
 
     # Getter de los parámetros
     def get_params(self):
@@ -304,6 +306,8 @@ class SearchEngine():
         n = 2
 
         idx = 0
+
+
         
         # Doble bucle para recorrer todos los movimientos previos del tablero 
         for o in reversed(self.pre_move):
@@ -451,12 +455,7 @@ class SearchEngine():
 
                     if idx_ij != None:
                         found = True
-                        # print(ij)
-                        # print(transp)
-                        # print(ij)
-                        # time.sleep(5)
                         score_aux[0] = idx_ij
-
 
                     # ------ EXPAND -----
                     if not found:
@@ -483,7 +482,7 @@ class SearchEngine():
 
                     
                     if alpha >= beta:
-                        return score[0]
+                        return score
                 
                 # Reinserta el valor
                 possibles.insert(idx_i, i)
@@ -501,43 +500,23 @@ class SearchEngine():
         else:
             color_2 = Defines.WHITE
 
-        num_threats = [np.zeros(19),
-                    np.zeros(19), 
-                    np.zeros(38),
-                    np.zeros(38)]
-        
         # Jugador
-        h_threats = []
-        seen_h_threats = set(h_threats)
+        seen_h_threats = set([])
         
-        v_threats = []
-        seen_v_threats = set(v_threats)
+        seen_v_threats = set([])
 
-        d_threats = []
-        seen_d_threats = set(d_threats)
+        seen_d_threats = set([])
 
-        d2_threats = []
-        seen_d2_threats = set(d2_threats)
+        seen_d2_threats = set([])
 
-
-        # # # Rival
-        num_threats_2 = [np.zeros(19),
-                    np.zeros(19), 
-                    np.zeros(38),
-                    np.zeros(38)]
+        # Rival
+        seen_h_threats_2 = set([])
         
+        seen_v_threats_2 = set([])
 
-        h_threats_2 = []
-        seen_h_threats_2 = set(h_threats_2)
-        
-        v_threats_2 = []
-        seen_v_threats_2 = set(v_threats_2)
+        seen_d_threats_2 = set([])
 
-        d_threats_2 = []
-        seen_d_threats_2 = set(d_threats_2)
-
-        d2_threats_2 = []
-        seen_d2_threats_2 = set(d2_threats_2)
+        seen_d2_threats_2 = set([])
 
         # Y
         start_i = max(self.start_possible_y - 2, 1)
@@ -554,6 +533,8 @@ class SearchEngine():
 
         score = 0
         score_2 = 0
+
+        threats_dict = {}
         
 
         for i in range(start_i, end_i):
@@ -707,16 +688,23 @@ class SearchEngine():
 
                             right_e_d2_2 = [x - k,y + k]
                             
-
-                            
                 # Jugador
                 if count_v == 4 and count_e_v == 2: 
-                    #h_threats.append([x,right_e_h])
+
+                    if threats_dict.get("pos_h_" + str(y-1)) is not None:
+                        threats_dict["pos_h_" + str(y-1)] += 1
+                    else:
+                        threats_dict["pos_h_" + str(y-1)] = 1
+
+                    # #h_threats.append([x,right_e_h])
                     seen_v_threats.add(tuple([right_e_v, y]))
-                    num_threats[0][y-1] += 1
+                    # num_threats[0][y-1] += 1
+
+
 
                 elif count_v == 6:
-                    num_threats[0][y-1] = 1000000000
+                    
+                    score = 1000000000
                     break
                 
                 elif count_v == 3 and count_e_v >= 3:
@@ -725,12 +713,19 @@ class SearchEngine():
 
                     
                 if count_h == 4 and count_e_h == 2:
-                    #v_threats.append([right_e_v, x])
+                    if threats_dict.get("pos_v_" + str(x-1)) is not None:
+                        threats_dict["pos_v_" + str(x-1)] += 1
+                    else:
+                        threats_dict["pos_v_" + str(x-1)] = 1
+
+
+                    # #v_threats.append([right_e_v, x])
                     seen_h_threats.add(tuple([x, right_e_h]))
-                    num_threats[1][x-1] += 1
+                    # num_threats[1][x-1] += 1
                     
                 elif count_h == 6:
-                    num_threats[1][x-1] = 1000000000
+                    
+                    score = 1000000000
                     break
                 
                 elif count_h == 3 and count_e_h >= 3:
@@ -738,12 +733,18 @@ class SearchEngine():
                 
 
                 if count_d == 4 and count_e_d == 2:
-                    #d_threats.append([right_e_d[0], right_e_d[1]])
+                    if threats_dict.get("pos_d_" + str(x - y - 2)) is not None:
+                        threats_dict["pos_d_" + str(x - y - 2)] += 1
+                    else:
+                        threats_dict["pos_d_" + str(x - y - 2)] = 1
+
+                    # # d_threats.append([right_e_d[0], right_e_d[1]])
                     seen_d_threats.add(tuple([right_e_d[0], right_e_d[1]]))
-                    num_threats[2][x - y -2] += 1
+                    # num_threats[2][x - y -2] += 1
 
                 elif count_d == 6:
-                    num_threats[2][x - y - 2] = 1000000000
+                    
+                    score = 1000000000
                     break
 
                 elif count_d == 3 and count_e_d >= 3:
@@ -752,12 +753,17 @@ class SearchEngine():
 
 
                 if count_d2 == 4 and count_e_d2 == 2:
-                    #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+                    if threats_dict.get("pos_d2_" + str(x + y - 2)) is not None:
+                        threats_dict["pos_d2_" + str(x + y - 2)] += 1
+                    else:
+                        threats_dict["pos_d2_" + str(x + y - 2)] = 1
+                    # #d2_threats.append([right_e_d2[0], right_e_d2[1]])
                     seen_d2_threats.add(tuple([right_e_d2[0], right_e_d2[1]]))
-                    num_threats[3][x + y -2] += 1
+                    # num_threats[3][x + y -2] += 1
 
                 elif count_d2 == 6:
-                    num_threats[3][x + y - 2] = 1000000000
+                    
+                    score = 1000000000
                     break
                     
                 elif count_d2 == 3 and count_e_d2 >= 3:
@@ -767,12 +773,17 @@ class SearchEngine():
 
                 # # Rival
                 if count_v_2 == 4 and count_e_v_2 == 2: 
-                    #h_threats.append([x,right_e_h])
+                    if threats_dict.get("riv_h_" + str(y - 1)) is not None:
+                        threats_dict["riv_h_" + str(y - 1)] += 1
+                    else:
+                        threats_dict["riv_h_" + str(y - 1)] = 1
+                    # #h_threats.append([x,right_e_h])
                     seen_v_threats_2.add(tuple([right_e_v_2, y]))
-                    num_threats_2[0][y-1] += 1
+                    # num_threats_2[0][y-1] += 1
                 
                 elif count_v_2 == 6:
-                    num_threats_2[0][y-1] = 1000000000
+                    
+                    score_2 = 1000000000
                     break
             
                 elif count_v_2 == 3 and count_e_v_2 >= 3:
@@ -781,12 +792,17 @@ class SearchEngine():
 
     
                 if count_h_2 == 4 and count_e_h_2 == 2:
-                    #v_threats.append([right_e_v, x])
+                    if threats_dict.get("riv_v_" + str(x - 1)) is not None:
+                        threats_dict["riv_v_" + str(x - 1)] += 1
+                    else:
+                        threats_dict["riv_v_" + str(x - 1)] = 1
+                    # #v_threats.append([right_e_v, x])
                     seen_h_threats_2.add(tuple([x, right_e_h_2]))
-                    num_threats_2[1][x-1] += 1
+                    # num_threats_2[1][x-1] += 1
 
                 elif count_h_2 == 6:
-                    num_threats_2[1][x-1] = 1000000000
+                    
+                    score_2 = 1000000000
                     break
                     
                 elif count_h_2 == 3 and count_e_h_2 >= 3:
@@ -796,12 +812,17 @@ class SearchEngine():
 
                 # /
                 if count_d_2 == 4 and count_e_d_2 == 2:
-                    #d_threats.append([right_e_d[0], right_e_d[1]])
+                    # #d_threats.append([right_e_d[0], right_e_d[1]])
                     seen_d_threats_2.add(tuple([right_e_d_2[0], right_e_d_2[1]]))
-                    num_threats_2[2][x - y -2] += 1
+                    # num_threats_2[2][x - y -2] += 1
+                    if threats_dict.get("riv_d_" + str(x - y - 2)) is not None:
+                        threats_dict["riv_d_" + str(x - y - 2)] += 1
+                    else:
+                        threats_dict["riv_d_" + str(x - y - 2)] = 1
                 
                 elif count_d_2 == 6:
-                    num_threats_2[2][x - y - 2] = 1000000000
+                    
+                    score_2 = 1000000000
                     break
                     
                 elif count_d_2 == 3 and count_e_d_2 >= 3:
@@ -810,203 +831,29 @@ class SearchEngine():
 
                 # \ 
                 if count_d2_2 == 4 and count_e_d2_2 == 2:
-                    #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+                    if threats_dict.get("riv_d2_" + str(x + y - 2)) is not None:
+                        threats_dict["riv_d2_" + str(x + y - 2)] += 1
+                    else:
+                        threats_dict["riv_d2_" + str(x + y - 2)] = 1
+                    # #d2_threats.append([right_e_d2[0], right_e_d2[1]])
                     seen_d2_threats_2.add(tuple([right_e_d2_2[0], right_e_d2_2[1]]))
-                    num_threats_2[3][x+y -2] += 1
+                    # num_threats_2[3][x+y -2] += 1
                 
                 elif count_d2_2 == 6:
-                    num_threats_2[3][x+y - 2] = 1000000000
+                    
+                    score_2 = 1000000000
                     break
 
                 elif count_d2_2 == 3 and count_e_d2_2 >= 3:
                     score_2 += self.m_med_riv
 
 
-        
-        
-        # for i in range(len(num_threats[2])):
-        #     # 2
-        #     if num_threats_2[2][i] >= 3:
-        #         if num_threats_2[2][i] == 3:
-        #             score_2 += 100
-        #         else:
-        #             score_2 = math.inf
-        #         break
-                
-                
-        #     if num_threats_2[2][i] is not None and num_threats_2[2][i] != 0:
-        #         score_2 += num_threats_2[2][i]**num_threats_2[2][i]**num_threats_2[2][i]
-
-            
-        #     # 3
-        #     if num_threats_2[3][i] >= 3:
-        #         if num_threats_2[3][i] == 3:
-        #             score_2 += 100
-        #         else:
-        #             score_2 = math.inf
-        #         break
-                
-                
-                
-            
-        #     if num_threats_2[3][i] is not None and num_threats_2[3][i] != 0:
-        #         score_2 += num_threats_2[3][i]**num_threats_2[3][i]**num_threats_2[3][i]
-
-        #     # 0
-        #     if i < len(num_threats[0]):
-        #         if num_threats_2[0][i] >= 3:
-        #             if num_threats_2[0][i] == 3:
-        #                 score_2 += 100
-        #             else:
-        #                 score_2 = math.inf
-        #             break
-                    
-                    
-        #         if num_threats_2[0][i] is not None and num_threats_2[0][i] != 0:
-        #             score_2 += num_threats_2[0][i]**num_threats_2[0][i]**num_threats_2[0][i]
-
-
-
-        #         if num_threats_2[1][i] >= 3:
-        #             if num_threats_2[1][i] == 3:
-        #                 score_2 += 100
-        #             else:
-        #                 score_2 = math.inf
-        #             break
-                                    
-        #         if num_threats_2[1][i] is not None and num_threats_2[1][i] != 0:
-        #             score_2 += num_threats_2[1][i]**num_threats_2[1][i]**num_threats_2[1][i]
-
-
-        #         # 0
-        #         if num_threats[0][i] >= 3:
-        #             if num_threats[0][i] == 3:
-        #                 score += 100
-        #             else:
-        #                 score = math.inf
-        #             break
-
-        #         if num_threats[0][i] is not None and num_threats[0][i] != 0:
-        #             score += num_threats[0][i]**num_threats[0][i]**num_threats[0][i]
-                
-
-        #         # 1
-        #         if num_threats[1][i] >= 3:
-        #             if num_threats[1][i] == 3:
-        #                 score += 100
-        #             else:
-        #                 score = math.inf
-        #             break
-                
-        #         if num_threats[1][i] is not None and num_threats[1][i] != 0:
-        #             score += num_threats[1][i]**num_threats[1][i]**num_threats[1][i]
-
-            
-        #     # # 2
-        #     if num_threats[2][i] >= 3:
-        #         if num_threats[2][i] == 3:
-        #             score += 100
-        #         else:
-        #             score = math.inf
-        #         break
-            
-        #     if num_threats[2][i] is not None and num_threats[2][i] != 0:
-        #         score += num_threats[2][i]**num_threats[2][i]**num_threats[2][i]
-
-            
-        #     # 3
-        #     if num_threats[3][i] >= 3:
-        #         if num_threats[3][i] == 3:
-        #             score += 100
-        #         else:
-        #             score = math.inf
-        #         break
-            
-        #     if num_threats[3][i] is not None and num_threats[3][i] != 0:
-        #         score += num_threats[3][i]**num_threats[3][i]**num_threats[3][i]
-
-        # # print(score)
-        # # print(score_2)
-
-        # if score_2 >= score:
-        #     return -score_2
-        
-        # return score 
-        for i in range(len(num_threats[2])):
-            # 2
-            if num_threats_2[2][i] >= 3:
-                score_2 = 1000000000
-                break
-                
-            if num_threats_2[2][i] is not None and num_threats_2[2][i] != 0:
-                score_2 +=  self.m_riv ** num_threats_2[2][i]
-
-            
-            # 3
-            if num_threats_2[3][i] >= 3:
-                score_2 = 1000000000
-                break
-                
-            if num_threats_2[3][i] is not None and num_threats_2[3][i] != 0:
-                score_2 +=  self.m_riv ** num_threats_2[3][i]
-
-
-
-            # 0
-            if i < len(num_threats[0]):
-
-                if num_threats_2[0][i] >= 3:
-                    score_2 = 1000000000
-                    break
-                    
-                if num_threats_2[0][i] is not None and num_threats_2[0][i] != 0:
-                    score_2 += self.m_riv ** num_threats_2[0][i]
-
-
-
-                if num_threats_2[1][i] >= 3:
-                    score_2 = 1000000000
-                    break
-                                    
-                if num_threats_2[1][i] is not None and num_threats_2[1][i] != 0:
-                    score_2 += self.m_riv ** num_threats_2[1][i]
-
-
-                # 0
-                if num_threats[0][i] >= 3:
-                    score = 1000000000
-                    break
-
-                if num_threats[0][i] is not None and num_threats[0][i] != 0:
-                    score += self.m_pos ** num_threats[0][i]
-                
-
-                # 1
-                if num_threats[1][i] >= 3:
-                    score = 1000000000
-                    break
-                
-                if num_threats[1][i] is not None and num_threats[1][i] != 0:
-                    score += self.m_pos ** num_threats[1][i]
-
-            
-            # # 2
-            if num_threats[2][i] >= 3:
-                score = 1000000000
-                break
-            
-            if num_threats[2][i] is not None and num_threats[2][i] != 0:
-                score += self.m_pos ** num_threats[2][i]
-
-            
-            # 3
-            if num_threats[3][i] >= 3:
-                score = 1000000000
-                break
-            
-            if num_threats[3][i] is not None and num_threats[3][i] != 0:
-                score += self.m_pos ** num_threats[3][i]
-
+        # print(threats_dict)
+        for key, value in threats_dict.items():
+            if key[0] == "p":
+                score += self.m_pos ** value
+            else:
+                score_2 += self.m_riv ** value
 
         return  score * self.m_score - score_2 * self.m_score_2
             
