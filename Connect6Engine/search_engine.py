@@ -27,9 +27,7 @@ class SearchEngine():
         # Turnos anteriores
         self.pre_move = [StoneMove(), StoneMove()]
 
-    # MAX PARAMS EPOCH 1: [22, 8, 4, 49, 24, 1]  --> 25317176.0
-# EPOCH 2: [13, 8, 4, 49, 54, 2] --> 12099120.0
-# EPOCH 3: [13, 8, 2, 34, 36, 4] --> 11105668.0
+# MAX PARAMS: [13, 8, 2, 34, 36, 4] --> 11105668.0
 
         # Parámetros
         self.m_score = 13        # Ponderación score MAX 
@@ -40,9 +38,7 @@ class SearchEngine():
 
         self.m_med_pos = 2      # Conteo de medias amenazas
         self.m_med_riv = 4      # Conteo de medias amenazas
-
-        self.dict_of_threats = {}
-
+        
 
     # Getter de los parámetros
     def get_params(self):
@@ -75,13 +71,6 @@ class SearchEngine():
         self.m_chess_type = color
         self.m_alphabeta_depth = alphabeta_depth
         self.m_total_nodes = 0
-        
-        # Si es el primer turno, coloca el movimiento donde lo pone el rival o en (10, 10)        
-        # if self.turn == 0:
-        #     self.pre_move[1] = pre_move
-        
-        # # Actualiza el movimiento anterior
-        # self.pre_move[0] = pre_move
 
 
     # Función para el Alpha - Beta
@@ -165,11 +154,14 @@ class SearchEngine():
 
         # Busca amenazas propias, de manera que si encuentra dos amenazas propias hará el movimiento ganador
         for i in range(1, Defines.GRID_NUM - 1):
+
+            # Si encuentra un movimiento, detiene la búsqueda
             if flag:
                 break
 
             for j in reversed(range(1, Defines.GRID_NUM - 1)):
-                # Jugador
+                
+                # Contador de fichas del jugador (count_x) y huecos (count_e_x)
                 count_h = 0
                 count_e_h = 0
 
@@ -202,7 +194,7 @@ class SearchEngine():
 
                 for k in (range(0,6)):
                     # Jugador
-                    # Vertical
+                    # Horizontal: está cambiado para que haga [y,x]
                     if x + 6 <= 20 and tuple([x + k,y]) not in seen_v_threats:
                         stone = self.m_board[x + k][y]
 
@@ -215,7 +207,7 @@ class SearchEngine():
 
                             right_e_v = x+k
 
-                    # Horizontal: está cambiado para que haga [y,x]
+                    # Vertical
                     if y + 6 <= 20 and tuple([x,y + k]) not in seen_h_threats:
                         stone = self.m_board[x][y+k]
 
@@ -227,7 +219,7 @@ class SearchEngine():
 
                             right_e_h = y + k
 
-                    # # Diag
+                    # Diag
                     if y + 6 <= 20 and x + 6 <= 20  and tuple([x + k,y + k]) not in seen_d_threats:
                         stone = self.m_board[x + k][y + k]
 
@@ -239,7 +231,7 @@ class SearchEngine():
 
                             right_e_d = [x + k,y + k]
 
-                    # # Diag 2
+                    # Diag 2
                     if x - 6 >= 0 and y + 6 <= 20  and tuple([y + k,x - k]) not in seen_d2_threats:
                         stone = self.m_board[y + k][x - k]
 
@@ -252,7 +244,7 @@ class SearchEngine():
 
                             right_e_d2 = [y + k,x - k]
 
-                            
+                # En el caso en el que se detecte una amenaza en profundidad 0, guarda el movimiento y detiene la búsqueda   
                 # Jugador
                 if count_v == 4 and count_e_v == 2: 
                     #h_threats.append([x,right_e_h])
@@ -307,8 +299,6 @@ class SearchEngine():
 
         idx = 0
 
-
-        
         # Doble bucle para recorrer todos los movimientos previos del tablero 
         for o in reversed(self.pre_move):
             if idx == 1:
@@ -444,28 +434,33 @@ class SearchEngine():
                     possibles_aux = possibles.copy()
                     possibles_aux.remove(j)
 
+                    # Variable para indicar si se encuentra en la tabla
                     found = False
 
+                    # Keys de la tabla de transposicion
                     ij = ((i[0], i[1]), (j[0], j[1]), color)
                     ji = ((j[0], j[1]), (i[0], i[1]), color)
 
+                    # Obtiene el valor de la tabla
                     idx_ij = transp.get(ij)
 
+                    # Variable auxiliar del score
                     score_aux = [0, [[-1, -1], [-1, -1]]]
 
+                    # Si el movimiento está en la tabla, coge su resultado
                     if idx_ij != None:
                         found = True
                         score_aux[0] = idx_ij
 
-                    # ------ EXPAND -----
+                    # Si no encuentra un valor, expande y guarda el resultado en la tabla
                     if not found:
                         score_aux = self.max(possibles_aux, depth-1, -alpha, -beta, turn * -1)
                         score_aux[0] = -score_aux[0]
 
-
                         transp[ij] = score_aux[0]
                         transp[ji] = score_aux[0]
                     
+                    # Actualiza los valores
                     score_aux[1]= [i, j]
 
                     make_move(self.m_board, move, Defines.NOSTONE)
@@ -495,6 +490,7 @@ class SearchEngine():
     def threats(self, color):
         color_2 = color
         
+        # Elige el color MAX y MIN
         if color ==Defines.WHITE:
             color_2 = Defines.BLACK
         else:
@@ -518,6 +514,7 @@ class SearchEngine():
 
         seen_d2_threats_2 = set([])
 
+        # Ventana con los valores modificados para ampliarlos en 2 casillas
         # Y
         start_i = max(self.start_possible_y - 2, 1)
         end_i = min(self.end_possible_y + 2, Defines.GRID_NUM - 1)
@@ -534,12 +531,13 @@ class SearchEngine():
         score = 0
         score_2 = 0
 
+        # Tabla Hash de amenazas
         threats_dict = {}
         
-
+        # Recorre la ventana
         for i in range(start_i, end_i):
             for j in reversed(range(start_j, end_j)):
-
+                # Contador de fichas de los jugadores (count_x) y huecos (count_e_x)
                 # Jugador
                 count_h = 0
                 count_e_h = 0
@@ -586,9 +584,11 @@ class SearchEngine():
                 x = Defines.GRID_NUM - 1 - j
                 y = i
 
+                #    Ventana de 6: si está dentro de los límites y no han visto la amenaza, incrementa si es un hueco
+                # o una ficha propia en cada dirección
                 for k in (range(0,6)):
                     # Jugador
-                    # Vertical
+                    # Horizontal: está cambiado para que haga [y,x]
                     if x + 6 <= 20 and tuple([x + k,y]) not in seen_v_threats:
                         stone = self.m_board[x + k][y]
 
@@ -600,7 +600,7 @@ class SearchEngine():
 
                             right_e_v = x+k
 
-                    # Horizontal: está cambiado para que haga [y,x]
+                    # Vertical
                     if y + 6 <= 20 and tuple([x,y + k]) not in seen_h_threats:
                         stone = self.m_board[x][y+k]
 
@@ -637,7 +637,7 @@ class SearchEngine():
 
 
                     # Rival
-                    # Vertical
+                    # Horizontal: está cambiado para que haga [y,x]
                     if x + 6 <= 20 and  tuple([x + k,y]) not in seen_v_threats_2:
                         stone = self.m_board[x + k][y]
 
@@ -650,7 +650,7 @@ class SearchEngine():
 
                             right_e_v_2 = x+k
                                          
-                    # Horizontal: está cambiado para que haga [y,x]
+                    # Vertical
                     if y + 6 <= 20 and tuple([x,y + k]) not in seen_h_threats_2:
                         stone = self.m_board[x][y+k]
 
@@ -662,7 +662,7 @@ class SearchEngine():
 
                             right_e_h_2 = y + k
                             
-                    # # Diag    /
+                    # Diag    
                     if y + 6 <= 20 and x + 6 <= 20  and tuple([x + k,y + k]) not in seen_d_threats_2:
                         stone = self.m_board[x + k][y + k]
 
@@ -674,7 +674,7 @@ class SearchEngine():
 
                             right_e_d_2 = [x + k,y + k]
 
-                    # # Diag 2   \
+                    # Diag 2   
                     if x - 6 >= 0 and y + 6 <= 20  and tuple([x - k,y + k]) not in seen_d2_threats_2:
                         stone = self.m_board[x - k][y + k]
 
@@ -687,8 +687,12 @@ class SearchEngine():
                             count_e_d2_2 += 1
 
                             right_e_d2_2 = [x - k,y + k]
-                            
+
+                # Cuenta amenazas en cada dirección y la almacena en la tabla Hash 
+                # Si encuentra 6 alineadas, genera puntuación máxima y acaba el bucle
+                # Genera puntuación para las amenazas parciales       
                 # Jugador
+                # Horizontal
                 if count_v == 4 and count_e_v == 2: 
 
                     if threats_dict.get("pos_h_" + str(y-1)) is not None:
@@ -696,11 +700,7 @@ class SearchEngine():
                     else:
                         threats_dict["pos_h_" + str(y-1)] = 1
 
-                    # #h_threats.append([x,right_e_h])
                     seen_v_threats.add(tuple([right_e_v, y]))
-                    # num_threats[0][y-1] += 1
-
-
 
                 elif count_v == 6:
                     
@@ -711,17 +711,14 @@ class SearchEngine():
                     score += self.m_med_pos
 
 
-                    
+                # Vertical                
                 if count_h == 4 and count_e_h == 2:
                     if threats_dict.get("pos_v_" + str(x-1)) is not None:
                         threats_dict["pos_v_" + str(x-1)] += 1
                     else:
                         threats_dict["pos_v_" + str(x-1)] = 1
 
-
-                    # #v_threats.append([right_e_v, x])
                     seen_h_threats.add(tuple([x, right_e_h]))
-                    # num_threats[1][x-1] += 1
                     
                 elif count_h == 6:
                     
@@ -732,15 +729,15 @@ class SearchEngine():
                     score += self.m_med_pos
                 
 
+
+                # Diagonal
                 if count_d == 4 and count_e_d == 2:
                     if threats_dict.get("pos_d_" + str(x - y - 2)) is not None:
                         threats_dict["pos_d_" + str(x - y - 2)] += 1
                     else:
                         threats_dict["pos_d_" + str(x - y - 2)] = 1
 
-                    # # d_threats.append([right_e_d[0], right_e_d[1]])
                     seen_d_threats.add(tuple([right_e_d[0], right_e_d[1]]))
-                    # num_threats[2][x - y -2] += 1
 
                 elif count_d == 6:
                     
@@ -752,14 +749,14 @@ class SearchEngine():
 
 
 
+                # Diagonal 2
                 if count_d2 == 4 and count_e_d2 == 2:
                     if threats_dict.get("pos_d2_" + str(x + y - 2)) is not None:
                         threats_dict["pos_d2_" + str(x + y - 2)] += 1
                     else:
                         threats_dict["pos_d2_" + str(x + y - 2)] = 1
-                    # #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+
                     seen_d2_threats.add(tuple([right_e_d2[0], right_e_d2[1]]))
-                    # num_threats[3][x + y -2] += 1
 
                 elif count_d2 == 6:
                     
@@ -771,15 +768,15 @@ class SearchEngine():
 
 
 
-                # # Rival
+                # Rival
+                # Horizontal
                 if count_v_2 == 4 and count_e_v_2 == 2: 
                     if threats_dict.get("riv_h_" + str(y - 1)) is not None:
                         threats_dict["riv_h_" + str(y - 1)] += 1
                     else:
                         threats_dict["riv_h_" + str(y - 1)] = 1
-                    # #h_threats.append([x,right_e_h])
+
                     seen_v_threats_2.add(tuple([right_e_v_2, y]))
-                    # num_threats_2[0][y-1] += 1
                 
                 elif count_v_2 == 6:
                     
@@ -790,15 +787,14 @@ class SearchEngine():
                     score_2 += self.m_med_riv
 
 
-    
+                # Vertical
                 if count_h_2 == 4 and count_e_h_2 == 2:
                     if threats_dict.get("riv_v_" + str(x - 1)) is not None:
                         threats_dict["riv_v_" + str(x - 1)] += 1
                     else:
                         threats_dict["riv_v_" + str(x - 1)] = 1
-                    # #v_threats.append([right_e_v, x])
+
                     seen_h_threats_2.add(tuple([x, right_e_h_2]))
-                    # num_threats_2[1][x-1] += 1
 
                 elif count_h_2 == 6:
                     
@@ -810,15 +806,14 @@ class SearchEngine():
 
 
 
-                # /
+                # Diagonal
                 if count_d_2 == 4 and count_e_d_2 == 2:
-                    # #d_threats.append([right_e_d[0], right_e_d[1]])
-                    seen_d_threats_2.add(tuple([right_e_d_2[0], right_e_d_2[1]]))
-                    # num_threats_2[2][x - y -2] += 1
                     if threats_dict.get("riv_d_" + str(x - y - 2)) is not None:
                         threats_dict["riv_d_" + str(x - y - 2)] += 1
                     else:
                         threats_dict["riv_d_" + str(x - y - 2)] = 1
+
+                    seen_d_threats_2.add(tuple([right_e_d_2[0], right_e_d_2[1]]))
                 
                 elif count_d_2 == 6:
                     
@@ -829,15 +824,14 @@ class SearchEngine():
                     score_2 += self.m_med_riv
 
 
-                # \ 
+                # Diagonal 2
                 if count_d2_2 == 4 and count_e_d2_2 == 2:
                     if threats_dict.get("riv_d2_" + str(x + y - 2)) is not None:
                         threats_dict["riv_d2_" + str(x + y - 2)] += 1
                     else:
                         threats_dict["riv_d2_" + str(x + y - 2)] = 1
-                    # #d2_threats.append([right_e_d2[0], right_e_d2[1]])
+
                     seen_d2_threats_2.add(tuple([right_e_d2_2[0], right_e_d2_2[1]]))
-                    # num_threats_2[3][x+y -2] += 1
                 
                 elif count_d2_2 == 6:
                     
@@ -848,7 +842,7 @@ class SearchEngine():
                     score_2 += self.m_med_riv
 
 
-        # print(threats_dict)
+        # Genera las puntuaciones en base a las amenazas
         for key, value in threats_dict.items():
             if key[0] == "p":
                 score += self.m_pos ** value
