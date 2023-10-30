@@ -132,9 +132,6 @@ def gen_random_vector():
 
     return [vec[0][0], vec[0][1], vec[1][0], vec[2][0], vec[2][1], vec[3][0]]
 
-# MAX PARAMS EPOCH 1: [22, 8, 4, 49, 24, 1]  --> 25317176.0
-# EPOCH 2: [13, 8, 4, 49, 54, 2] --> 12099120.0
-# EPOCH 3: [13, 8, 2, 34, 36, 4] --> 11105668.0
 
 # Create an instance of GameEngine and run the game
 if __name__ == "__main__":
